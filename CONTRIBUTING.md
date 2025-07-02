@@ -14,19 +14,19 @@ All types of contributions are encouraged and valued. See the [Table of Contents
 ## Code of Conduct
 
 This project and everyone participating in it is governed by the
-[RoboSim5g Code of Conduct](https://gitlab.com/phine-oss/robosim5g/-/blob/devel/CODE_OF_CONDUCT.md?ref_type=heads).
+[RoboSim5g Code of Conduct](https://github.com/phinetech/RoboSim5G/blob/develop/CODE_OF_CONDUCT.md).
 By participating, you are expected to uphold this code. Please report unacceptable behavior
 to <riccardo.belletti@phine.tech>.
 
 
 ## I Have a Question
 
-> If you want to ask a question, we assume that you have read the available [README](https://gitlab.com/phine-oss/robosim5g/-/blob/devel/README.md?ref_type=heads) file.
+> If you want to ask a question, we assume that you have read the available [README](https://github.com/phinetech/RoboSim5G/blob/develop/README.md) file.
 
 Before you ask a question, it is best to search for existing [Issues](https://gitlab.com/phine-oss/robosim5g/issues) that might help you. In case you have not found a suitable issue and still need clarification, you can write on our [slack chat](https://join.slack.com/t/robosimworkspace/shared_invite/zt-38i7sbsit-FpsT6d7PU241~nGz0fcUig). You can also write directly to <riccardo.belletti@phine.tech> to receive a private answer. It is also advisable to search the internet for answers first. 
 You can also write an Issue on github, following those points:
 
-- Open an [Issue](https://gitlab.com/phine-oss/robosim5g/issues/new).
+- Open an [Issue](https://github.com/phinetech/RoboSim5G/issues).
 - Provide as much context as you can about what you're running into.
 - Provide project and platform versions (nodejs, npm, etc), depending on what seems relevant.
 
@@ -43,7 +43,7 @@ A good bug report shouldn't leave others needing to chase you up for more inform
 
 - Make sure that you are using the latest version.
 - Determine if your bug is really a bug and not an error on your side e.g. using incompatible environment components/versions 
-- To see if other users have experienced (and potentially already solved) the same issue you are having, check if there is not already a bug report existing for your bug or error in the [bug tracker](https://gitlab.com/phine-oss/robosim5g/issues?q=label%3Abug).
+- To see if other users have experienced (and potentially already solved) the same issue you are having, check if there is not already a bug report existing for your bug or error in the [bug tracker](https://github.com/phinetech/RoboSim5G/issues).
 - Also make sure to search the internet (including Stack Overflow) to see if users outside of the GitHub community have discussed the issue.
 - Collect information about the bug:
   - Stack trace (Traceback)
@@ -59,7 +59,7 @@ A good bug report shouldn't leave others needing to chase you up for more inform
 
 If you encounter some problems, do not hesitate to contact <riccardo.belletti@phine.tech> or write in the [slack chat](https://join.slack.com/t/robosimworkspace/shared_invite/zt-38i7sbsit-FpsT6d7PU241~nGz0fcUig). You can also write directly the bug report folowing those steps:
 
-- Open an [Issue](https://gitlab.com/phine-oss/robosim5g/issues/new). (Since we can't be sure at this point whether it is a bug or not, we ask you not to talk about a bug yet and not to label the issue.)
+- Open an [Issue](https://github.com/phinetech/RoboSim5G/issues). (Since we can't be sure at this point whether it is a bug or not, we ask you not to talk about a bug yet and not to label the issue.)
 - Explain the behavior you would expect and the actual behavior.
 - Please provide as much context as possible and describe the *reproduction steps* that someone else can follow to recreate the issue on their own. This usually includes your code. For good bug reports you should isolate the problem and create a reduced test case.
 - Provide the information you collected in the previous section.
@@ -79,14 +79,14 @@ This section guides you through submitting an enhancement suggestion for RoboSim
 #### Before Submitting an Enhancement
 
 - Make sure that you are using the latest version.
-- Read the [README](https://gitlab.com/phine-oss/robosim5g/-/blob/devel/README.md?ref_type=heads) file carefully and find out if the functionality is already covered, maybe by an individual configuration.
-- Perform a [search](https://gitlab.com/phine-oss/robosim5g/issues) to see if the enhancement has already been suggested. If it has, add a comment to the existing issue instead of opening a new one.
+- Read the [README](https://github.com/phinetech/RoboSim5G/blob/develop/README.md) file carefully and find out if the functionality is already covered, maybe by an individual configuration.
+- Perform a [search](https://github.com/phinetech/RoboSim5G/issues) to see if the enhancement has already been suggested. If it has, add a comment to the existing issue instead of opening a new one.
 - Find out whether your idea fits with the scope and aims of the project. It's up to you to make a strong case to convince the project's developers of the merits of this feature. Keep in mind that we want features that will be useful to the majority of our users and not just a small subset. If you're just targeting a minority of users, consider writing an add-on/plugin library.
 
 
 #### How Do I Submit a Good Enhancement Suggestion?
 
-Enhancement suggestions are tracked as [GitHub issues](https://gitlab.com/phine-oss/robosim5g/issues).
+Enhancement suggestions are tracked as [GitHub issues](https://github.com/phinetech/RoboSim5G/issues).
 
 - Use a **clear and descriptive title** for the issue to identify the suggestion.
 - Provide a **step-by-step description of the suggested enhancement** in as many details as possible.

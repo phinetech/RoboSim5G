@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    container:
+      image: osrf/ros:humble-desktop  # Base ROS 2 Humble image
+      options: --user root
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up ROS 2 environment
+        run: |
+          apt update && apt install -y \
+            python3-colcon-common-extensions \
+            wget lsb-release gnupg2 \
+            && rm -rf /var/lib/apt/lists/*
+
+          # Add Gazebo Ignition key and repo (Fortress in this case)
+          echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" > /etc/apt/sources.list.d/gazebo-stable.list
+          wget https://packages.osrfoundation.org/gazebo.key -O - | apt-key add -
+
+          apt update && apt install -y ignition-fortress
+
+      - name: Build phine-plugins with colcon
+        run: |
+          cd phine-plugins
+          source /opt/ros/humble/setup.bash
+          colcon build --event-handlers console_direct+
+
+      - name: Run simple test (optional)
+        run: |
+          echo "CI completed successfully"

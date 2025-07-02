@@ -1,4 +1,9 @@
 ## Running the Demo
+If it is the first time that you run this demo, you firstly need to build the gNB plugin by(considering `path` the path to the main folder of this repo):
+```bash
+cd path/phine-plugins
+colcon build
+```
 In one terminal, launch the core network and set the environment variables (plugin folder location and gazebo model folder location):
 ```bash
 cd path/demo

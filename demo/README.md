@@ -30,4 +30,4 @@ When the simulation is stopped use the same terminal to stop and remove the cont
 It is important to use the same terminal since this `.sh` file uses the environment variable exported by `start_CN-set_env.sh`.
 
 ## Modify gNB parameters 
-Inside `world-file.sdf` the two gNB are declared, you can modify those parameters following the `World file declaration` section of `README.md` in the main folder of this repository. You can add another gNB by copying the declaration and changing the name and pose fields.
+Inside `world-file.sdf` the two gNB are declared, you can modify those parameters following the `World file declaration` section of [README.md](https://github.com/phinetech/RoboSim5G/blob/develop/README.md) in the main folder of this repository. You can add another gNB by copying the declaration and changing the name and pose fields.

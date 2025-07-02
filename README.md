@@ -147,7 +147,7 @@ The parameters that can be changed are:
 - mobile_country_code, that has to be the same as the one in your amf (can be changed in `path/oai_setup/conf/conf.yaml`, if you do not change that keep it like in the example )
 - mobile_network_code,that has to be the same as the one in your amf(can be changed in `path/oai_setup/conf/conf.yaml`, if you do not change that keep it like in the example )
 ## Modify gNB source code
-The source code of the gNB is at `path/phine-plugins/src/phine_plugins/src`. You can modify it as you wish consulting Coding Guidelines and Contributing,in case you would like to share your work. Once you have modified the code, delete `path/phine-plugins/log`,`path/phine-plugins/install`,`path/phine-plugins/build` and run in `path/phine-plugins`:
+The source code of the gNB is at `path/phine-plugins/src/phine_plugins/src`. You can modify it as you wish consulting [Coding Guidelines](https://github.com/phinetech/RoboSim5G/blob/develop/CODE_OF_CONDUCT.md) and [Contributing](https://github.com/phinetech/RoboSim5G/blob/develop/CONTRIBUTING.md),in case you would like to share your work. Once you have modified the code, delete `path/phine-plugins/log`,`path/phine-plugins/install`,`path/phine-plugins/build` and run in `path/phine-plugins`:
 ```
 colcon build
 

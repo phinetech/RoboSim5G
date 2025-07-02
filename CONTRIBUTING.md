@@ -24,7 +24,7 @@ to <riccardo.belletti@phine.tech>.
 > If you want to ask a question, we assume that you have read the available [README](https://github.com/phinetech/RoboSim5G/blob/develop/README.md) file.
 
 Before you ask a question, it is best to search for existing [Issues](https://gitlab.com/phine-oss/robosim5g/issues) that might help you. In case you have not found a suitable issue and still need clarification, you can write on our [slack chat](https://join.slack.com/t/robosimworkspace/shared_invite/zt-38i7sbsit-FpsT6d7PU241~nGz0fcUig). You can also write directly to <riccardo.belletti@phine.tech> to receive a private answer. It is also advisable to search the internet for answers first. 
-You can also write an Issue on github, following those points:
+You can also write an Issue on github, following these points:
 
 - Open an [Issue](https://github.com/phinetech/RoboSim5G/issues).
 - Provide as much context as you can about what you're running into.

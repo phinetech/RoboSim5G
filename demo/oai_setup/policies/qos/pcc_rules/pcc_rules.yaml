@@ -1,0 +1,23 @@
+non-gbr-rule-5qi-9:
+  flowInfos:
+    - flowDescription: permit out ip from any to assigned
+      packetFilterUsage: true
+  precedence: 10
+  refQosData:
+    - non-gbr-qos-5qi-9
+
+gbr-rule-5qi-1:
+  flowInfos:
+    - flowDescription: permit out ip from 192.168.70.135 to assigned
+      packetFilterUsage: true
+  precedence: 8
+  refQosData:
+    - gbr-qos-5qi-1
+
+gbr-rule-5qi-5:
+  flowInfos:
+    - flowDescription: permit out ip from any to assigned
+      packetFilterUsage: true
+  precedence: 9
+  refQosData:
+    - gbr-qos-5qi-5

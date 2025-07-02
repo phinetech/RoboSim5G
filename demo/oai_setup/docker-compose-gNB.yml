@@ -1,0 +1,21 @@
+services:
+    oai_gNB : 
+        image: oaisoftwarealliance/oai-gnb:2024.w44
+        privileged: true
+        container_name : oai-gNB2
+        environment:
+            USE_ADDITIONAL_OPTIONS: --sa -E --rfsim --log_config.global_log_options level,nocolor,time
+        networks:
+            public_net:
+                ipv4_address : 192.168.70.160
+        volumes:
+            - ./conf/gnb.sa.bandn78.fr1.106PRB.rfsim.conf:/opt/oai-gnb/etc/gnb.conf
+        healthcheck:
+            test: /bin/bash -c "pgrep nr-softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+networks:
+    public_net:
+        external: true
+        name : phine-net

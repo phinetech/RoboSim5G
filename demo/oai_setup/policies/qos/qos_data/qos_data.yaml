@@ -1,0 +1,31 @@
+ non-gbr-qos-5qi-9:
+  5qi: 9
+  arp:
+    priorityLevel: 15
+    preemptCap: NOT_PREEMPT
+    preemptVuln: PREEMPTABLE
+  priorityLevel: 10
+
+ gbr-qos-5qi-1:
+  5qi: 1
+  maxbrUl: 70000 Kbps
+  maxbrDl: 100 Mbps
+  gbrUl: 50 Mbps
+  gbrDl: 50 Mbps
+  arp:
+    priorityLevel: 1
+    preemptCap: MAY_PREEMPT
+    preemptVuln: NOT_PREEMPTABLE
+  priorityLevel: 9
+
+ gbr-qos-5qi-5:
+   5qi: 5
+   maxbrUl: 60 Mbps
+   maxbrDl: 100 Mbps
+   gbrUl: 50 Mbps
+   gbrDl: 50 Mbps
+   arp:
+     priorityLevel: 1
+     preemptCap: MAY_PREEMPT
+     preemptVuln: NOT_PREEMPTABLE
+   priorityLevel: 8

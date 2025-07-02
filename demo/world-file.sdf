@@ -1,0 +1,86 @@
+<?xml version="1.0" ?>
+<sdf version="1.7">
+    <world name="myplugin_world">
+        <physics name="1ms" type="ignored">
+            <max_step_size>0.001</max_step_size>
+            <real_time_factor>1.0</real_time_factor>
+        </physics>
+        <plugin filename="libignition-gazebo-physics-system.so" name="ignition::gazebo::systems::Physics"/>
+        <plugin filename="libignition-gazebo-user-commands-system.so" name="ignition::gazebo::systems::UserCommands"/>
+        <plugin filename="libignition-gazebo-scene-broadcaster-system.so" name="ignition::gazebo::systems::SceneBroadcaster"/>
+
+        <!-- Sun Light -->
+        <light type="directional" name="sun">
+            <cast_shadows>true</cast_shadows>
+            <pose>0 0 10 0 0 0</pose>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+            <attenuation>
+                <range>1000</range>
+                <constant>0.9</constant>
+                <linear>0.01</linear>
+                <quadratic>0.001</quadratic>
+            </attenuation>
+            <direction>-0.5 0.1 -0.9</direction>
+        </light>
+
+        <!-- Ground Plane -->
+        <model name="ground_plane">
+            <static>true</static>
+            <link name="link">
+                <collision name="collision">
+                    <geometry>
+                        <plane>
+                            <normal>0 0 1</normal>
+                        </plane>
+                    </geometry>
+                </collision>
+                <visual name="visual">
+                    <geometry>
+                        <plane>
+                            <normal>0 0 1</normal>
+                            <size>100 100</size>
+                        </plane>
+                    </geometry>
+                    <material>
+                        <ambient>0.8 0.8 0.8 1</ambient>
+                        <diffuse>0.8 0.8 0.8 1</diffuse>
+                        <specular>0.8 0.8 0.8 1</specular>
+                    </material>
+                </visual>
+            </link>
+        </model>
+
+        <!-- Include Gnb1 -->
+        <include>
+            <uri>model://phine_gNB</uri>
+            <name>gNB1</name>
+            <pose>0 0 1 0 0 0</pose>
+            <plugin name="phine_plugins::gNB_plugin" filename="gNB_plugin">
+                    <link_name>phine_cell</link_name>
+                    <net_name>phine-net</net_name>
+                    <IP_GNB>192.168.70.159</IP_GNB>
+                    <IP_AMF>192.168.70.132</IP_AMF>
+                    <debug>false</debug>
+                    <mobile_country_code>001</mobile_country_code>  
+                    <mobile_network_code>01</mobile_network_code>
+            </plugin>
+        </include>
+        <!-- Include Gnb2 -->
+        <include>
+            <uri>model://phine_gNB</uri>
+            <name>gNB2</name>
+            <pose>0 1 1 0 0 -3.14</pose>
+            <plugin name="phine_plugins::gNB_plugin" filename="gNB_plugin">
+                    <link_name>phine_cell</link_name>
+                    <net_name>phine-net</net_name>
+                    <IP_GNB>192.168.70.160</IP_GNB>
+                    <IP_AMF>192.168.70.132</IP_AMF>
+                    <debug>false</debug>
+                    <mobile_country_code>001</mobile_country_code>  
+                    <mobile_network_code>01</mobile_network_code>
+            </plugin>
+        </include>
+    </world>
+</sdf>
+

@@ -7,7 +7,8 @@ The table of content of this README file is:
 	- [Visualization](#visualization)
 	- [gNB plugin](#gnb-plugin)
 	- [World file declaration](#world-file-declaration)
-4. [Upcoming features](#upcoming-features)
+4. [Modifying the source code](#modify-gnb-source-code)
+5. [Upcoming features](#upcoming-features)
 ## Requirements
 The project has been tested with:
 - Ubuntu 22.04
@@ -150,7 +151,6 @@ The parameters that can be changed are:
 The source code of the gNB is at `path/phine-plugins/src/phine_plugins/src`. You can modify it as you wish consulting [Coding Guidelines](https://github.com/phinetech/RoboSim5G/blob/develop/CODE_OF_CONDUCT.md) and [Contributing](https://github.com/phinetech/RoboSim5G/blob/develop/CONTRIBUTING.md),in case you would like to share your work. Once you have modified the code, delete `path/phine-plugins/log`,`path/phine-plugins/install`,`path/phine-plugins/build` and run in `path/phine-plugins`(with `path` the path to main folder of the repo):
 ```
 colcon build
-
 ```
 The updated plugin will be in `path/phine-plugins/build`.
 ## Upcoming features

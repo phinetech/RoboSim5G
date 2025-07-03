@@ -81,6 +81,45 @@ class RoboSimLogger {
  */
 void modify_service_name(const std::string& file_path, const std::string& old_key, const std::string& new_key,bool debug);
 
+/**
+ * @brief Modifies the value associated with a specified key in a Docker configuration file.
+ *
+ * This function searches for the given key in the specified file and updates its value to the provided new_value.
+ * Optionally, debug information can be printed during the operation.
+ *
+ * @param file_path The path to the Docker configuration file to be modified.
+ * @param key The key whose value should be updated in the configuration file.
+ * @param new_value The new value to assign to the specified key.
+ * @param debug If true, enables debug output for tracing the modification process.
+ */
+void modify_dockerC(const std::string& file_path, const std::string& key, const std::string& new_value,bool debug);
+
+/**
+ * @brief Modifies the value associated with a specified key in a gNb configuration file.
+ *
+ * This function searches for the given key in the specified gNb configuration file and updates its value to the provided new_value.
+ * Optionally, debug information can be printed during the operation.
+ *
+ * @param file_path The path to the gNb configuration file to be modified.
+ * @param key The key whose value should be updated in the configuration file.
+ * @param new_value The new value to assign to the specified key.
+ * @param debug If true, enables debug output for tracing the modification process.
+ */
+void modify_conf(const std::string& file_path, const std::string& key, const std::string& new_value,bool debug);
+
+// Function to retrieve parameters from SDF
+/**
+ * @brief Retrieves the value of a specified parameter from an SDF element.
+ *
+ * This function searches for a parameter with the given name within the provided
+ * SDF element. If the parameter is found, its value is assigned to paramValue.
+ *
+ * @param sdfClone      Pointer to the SDF element to search within.
+ * @param paramName     Name of the parameter to retrieve.
+ * @param paramValue    Reference to a string where the parameter value will be stored if found.
+ * @return true if the parameter was found and its value retrieved; false otherwise.
+ */
+bool GetParamFromSDF(sdf::ElementPtr sdfClone, const std::string& paramName, std::string& paramValue);
 
 /**
  * @brief Converts a string representation to a boolean value.

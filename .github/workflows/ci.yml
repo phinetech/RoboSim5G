@@ -36,7 +36,8 @@ jobs:
           cd phine-plugins
           source /opt/ros/humble/setup.bash
           colcon build --event-handlers console_direct+
-
+        shell: bash
+        
       - name: Run simple test (optional)
         run: |
           echo "CI completed successfully"

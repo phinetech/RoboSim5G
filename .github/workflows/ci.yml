@@ -2,7 +2,8 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, CI-test]
+
   pull_request:
     branches: [ main ]
 
@@ -41,9 +42,9 @@ jobs:
       - name: Run simple test (optional)
         run: |
           echo "CI completed successfully":
-            
+
   clang-format-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout repository
@@ -52,8 +53,9 @@ jobs:
       - name: Install clang-format 14
         run: |
           sudo apt update
-          sudo apt install -y clang-format
- 
+          sudo apt install -y clang-format-14
+          sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-14 100
+          clang-format --version
 
       - name: Run clang-format check
         run: |
@@ -61,5 +63,5 @@ jobs:
           echo "Checking the following files:"
           echo "$FILES"
           for file in $FILES; do
-            clang-format --dry-run --Werror "$file"
+            clang-format --dry-run --Werror --style=file "$file"
           done

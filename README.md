@@ -9,6 +9,7 @@ The table of content of this README file is:
 	- [World file declaration](#world-file-declaration)
 4. [Modifying the source code](#modify-gnb-source-code)
 5. [Upcoming features](#upcoming-features)
+
 If something goes wrong in following this README file or you have any questions, you can write on our [slack chat](https://join.slack.com/t/robosimworkspace/shared_invite/zt-38i7sbsit-FpsT6d7PU241~nGz0fcUig).
 ## Requirements
 The project has been tested with:
@@ -22,7 +23,7 @@ Considering `path` the absolute path to the repository, the OAI files can be fou
 - docker-compose.yml for launching the OAI Core Network containers
 - docker-compose-gNB.yml for launching the OAI gNB container
 - docker-compose-ue.yml for launching the OAI UE container
-Other folders are present inside `oai-setup`, containing configuration files useful for these containers. It possible to verify that the OAI modules work, by following this pipeline:
+Other folders are present inside `oai-setup`, containing configuration files useful for these containers. It is possible to verify that the OAI modules work, by following this pipeline:
  - In one terminal run the core network:
 ```
 cd path/oai_setup

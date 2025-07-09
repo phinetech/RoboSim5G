@@ -110,6 +110,7 @@ Having referenced in `env`:
 - `PROJECT_PATH=<path>`, such that `path/oai_setup` exists
 - `IGN_GAZEBO_SYSTEM_PLUGIN_PATH=<path-to-gazebo-models>`
 - `IGN_GAZEBO_RESOURCE_PATH=<path-to-Plugins>`
+
 With the model folder containing the gNB model and the plugin folder containing the gNB plugin, it is possible to add to your `world-file.sdf` the gNB by:
 ```
 <include>

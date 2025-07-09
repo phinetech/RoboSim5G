@@ -3,7 +3,7 @@
 
 First off, thanks for taking the time to contribute! ❤️
 
-All types of contributions are encouraged and valued. See the [Table of Contents](#table-of-contents) for different ways to help and details about how this project handles them. Please make sure to read the relevant section before making your contribution. It will make it a lot easier for us maintainers and smooth out the experience for all involved. The community looks forward to your contributions. 🎉
+All types of contributions are encouraged and valued. See the [Table of Contents](#table-of-contents) for different ways to help and details about how this project handles them. Please make sure to read the relevant section before making your contribution. It will make it a lot easier for us maintainers and smooth out the experience for all involved. The community looks forward to your contributions. Whener you have questions, bugs to report or suggestions about new features we encourage you to write them on our [slack chat](https://join.slack.com/t/robosimworkspace/shared_invite/zt-38i7sbsit-FpsT6d7PU241~nGz0fcUig).
 ## Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
@@ -94,63 +94,94 @@ Enhancement suggestions are tracked as [GitHub issues](https://github.com/phinet
 - You may want to **include screenshots or screen recordings** which help you demonstrate the steps or point out the part which the suggestion is related to. You can use [LICEcap](https://www.cockos.com/licecap/) to record GIFs on macOS and Windows, and the built-in [screen recorder in GNOME](https://help.gnome.org/users/gnome-help/stable/screen-shot-record.html.en) or [SimpleScreenRecorder](https://github.com/MaartenBaert/ssr) on Linux. 
 - **Explain why this enhancement would be useful** to most RoboSim5g users. You may also want to point out the other projects that solved it better and which could serve as inspiration.
 
-## How to contribute
+## How to Contribute
 
-### 1. Fork the Repository
-- Navigate to the GitLab repository you want to contribute to.
-- In the top-right corner, click on the **Fork** button. This will create a personal copy of the repository under your GitLab account.
+We welcome contributions! Please follow the steps below to make sure your changes are properly submitted and reviewed.
 
-### 2. Clone the Repository
-- Open your terminal or command prompt.
-- Clone your forked repository to your local machine using Git
-### 3. Set Upstream Remote (Optional but Recommended)
-Add the original repository as an upstream remote to fetch future updates:
+---
+
+### 1. Clone the Repository
+
+Open your terminal and clone the repository directly:
+
 ```bash
-git remote add upstream https://gitlab.com/phine-oss/robosim5g
+git clone https://github.com/phinetech/RoboSim5G.git
+cd RoboSim5G
 ```
-Verify the remotes to make sure the upstream is added:
-```bash
 
-git remote -v
-```
-### 4. Create a New Branch
-Always create a new branch for your changes rather than working directly on main (or master):
+---
+
+### 2. Create a New Branch
+
+Always create a new branch for your changes instead of working directly on `main`:
+
 ```bash
 git checkout -b my-feature-branch
 ```
 
-### 5. Make Your Changes
-Open the project files and make the necessary changes or additions.
+---
 
-Once you're done editing, save the changes.
+### 3. Make Your Changes
 
-### 6. Commit Your Changes
-Stage the changes:
+Edit the project files as needed using your preferred code editor.
+
+Please ensure your code follows the existing style guidelines and includes comments or documentation where appropriate.
+
+---
+
+### 4. Format Your Code
+
+We use `clang-format` to enforce consistent code style. A `.clang-format` file is included in the project and is configured to use **tabs** for indentation.
+
+> 💡 Use **clang-format version 17** for best results.
+
+To format your code:
+
+```bash
+clang-format -i your_file.cpp
+```
+
+Or all C++ source/header files in the current directory:
+
+```bash
+clang-format -i *.cpp *.hpp
+```
+
+---
+
+### 5. Commit Your Changes
+
+Stage your changes:
 
 ```bash
 git add .
 ```
 
-Commit your changes with a meaningful commit message:
+Commit with a clear, conventional message:
 
 ```bash
-git commit -m "feat: <short summary>"
+git commit -m "feat: my feature"
 ```
 
-### 7. Push the Changes to Your Fork
-Push your branch to your forked repository on GitLab:
+---
+
+### 6. Push Your Branch
+
+Push your feature branch to the remote repository:
+
 ```bash
 git push origin my-feature-branch
 ```
-### 8. Create a Merge Request (Pull Request)
-Go to your repository on GitLab.
 
-You'll usually see a prompt to create a Merge Request (MR) after pushing a new branch. If not:
+---
 
-Navigate to the Merge Requests tab.
+### 7. Create a Pull Request (Merge Request)
 
-Click on New Merge Request.
+1. Go to the [GitHub repository](https://github.com/phinetech/RoboSim5G).
+2. Navigate to the **Pull Requests** tab.
+3. Click **New Pull Request**.
+4. Select your branch as the source and `main` as the target.
+5. Provide a clear title and description of your changes.
+6. Submit the pull request.
 
-Select your feature branch and choose the original repository as the target branch (usually main or master).
-
-Provide a title and description for your MR (make sure it's clear and descriptive).
+Once submitted, your pull request will be reviewed. You may be asked to make changes before it is merged.

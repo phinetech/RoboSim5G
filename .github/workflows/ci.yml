@@ -40,4 +40,26 @@ jobs:
         
       - name: Run simple test (optional)
         run: |
-          echo "CI completed successfully"
+          echo "CI completed successfully":
+            
+  clang-format-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install clang-format 14
+        run: |
+          sudo apt update
+          sudo apt install -y clang-format
+ 
+
+      - name: Run clang-format check
+        run: |
+          FILES=$(find phine-plugins/src/phine_plugins/src -name '*.cc' -o -name '*.hh')
+          echo "Checking the following files:"
+          echo "$FILES"
+          for file in $FILES; do
+            clang-format --dry-run --Werror "$file"
+          done

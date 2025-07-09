@@ -9,6 +9,7 @@ The table of content of this README file is:
 	- [World file declaration](#world-file-declaration)
 4. [Modifying the source code](#modify-gnb-source-code)
 5. [Upcoming features](#upcoming-features)
+If something goes wrong in following this README file or you have any questions, you can write on our [slack chat](https://join.slack.com/t/robosimworkspace/shared_invite/zt-38i7sbsit-FpsT6d7PU241~nGz0fcUig).
 ## Requirements
 The project has been tested with:
 - Ubuntu 22.04
@@ -105,6 +106,7 @@ The plugin at runtime:
 - sends the pose of the gNB by publishing on a ROS2 topic called `pose_of_<name_of_gNB>`
 ### World file declaration
 Having referenced in `env`:
+- `PROJECT_PATH=<path>`, such that `path/oai_setup` exists
 - `IGN_GAZEBO_SYSTEM_PLUGIN_PATH=<path-to-gazebo-models>`
 - `IGN_GAZEBO_RESOURCE_PATH=<path-to-Plugins>`
 With the model folder containing the gNB model and the plugin folder containing the gNB plugin, it is possible to add to your `world-file.sdf` the gNB by:

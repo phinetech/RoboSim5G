@@ -21,7 +21,7 @@ This project develops **gNB and UE plugins for Gazebo SIM 6 (Ignition Fortress)*
     
 - **Brace Style**: Attach to function/loop signature
     
-- Use `clang-format` (`.clang-format` file provided), configured to use tabs, to auto-format code:
+- Use `clang-format 14` (`.clang-format` file provided), configured to use tabs, to auto-format code:
     
 ```bash    
     clang-format -i your_file.cpp

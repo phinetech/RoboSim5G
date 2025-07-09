@@ -17,30 +17,30 @@ limitations under the License.*/
 
 // The only required include in the header is this one.
 // All others will depend on what your plugin does.
-#include <string>
-#include <gz/common/Console.hh>
-#include <gz/sim/components/LinearVelocity.hh>
-#include <gz/sim/Model.hh>
-#include <gz/sim/Util.hh>
-#include <ignition/math/Vector3.hh>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <regex>
 #include <cstdlib>
+#include <fstream>
+#include <gz/common/Console.hh>
 #include <gz/math/Pose3.hh>
-#include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/string.hpp>
 #include <gz/plugin/Register.hh>
-#include <gz/sim/System.hh>
 #include <gz/sim/Entity.hh>
 #include <gz/sim/EntityComponentManager.hh>
 #include <gz/sim/EventManager.hh>
+#include <gz/sim/Model.hh>
+#include <gz/sim/System.hh>
+#include <gz/sim/Util.hh>
+#include <gz/sim/components/LinearVelocity.hh>
+#include <ignition/math/Vector3.hh>
+#include <iostream>
 #include <memory>
+#include <rclcpp/rclcpp.hpp>
+#include <regex>
 #include <sdf/sdf.hh>
+#include <sstream>
+#include <std_msgs/msg/string.hpp>
+#include <string>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 /**
  * @namespace phine_plugins
@@ -50,17 +50,15 @@ limitations under the License.*/
  * for extending and interacting with the RoboSim5G simulation, particularly
  * for 5G network simulation components.
  */
-namespace phine_plugins
-{
+namespace phine_plugins {
 // The plugin class inherits from the System class, which provides the
 // functionality to load the plugin and interact with the simulation.
 // The ISystemConfigure and ISystemPostUpdate interfaces are used to
 // configure the plugin and update the simulation, respectively.
-class gNB_plugin :
-  public gz::sim::System,
-  public gz::sim::ISystemConfigure,
-  public gz::sim::ISystemPostUpdate {
-  /// \brief Constructor
+class gNB_plugin : public gz::sim::System,
+		   public gz::sim::ISystemConfigure,
+		   public gz::sim::ISystemPostUpdate {
+    /// \brief Constructor
   public:
     gNB_plugin();
 
@@ -68,20 +66,21 @@ class gNB_plugin :
   public:
     ~gNB_plugin();
 
-    /// \brief Configure the plugin 
+    /// \brief Configure the plugin
   public:
     void Configure(const gz::sim::Entity &_entity,
-      const std::shared_ptr<const sdf::Element> &_sdf,
-      gz::sim::EntityComponentManager &_ecm,
-      gz::sim::EventManager &/*_eventMgr*/) override;
+		   const std::shared_ptr<const sdf::Element> &_sdf,
+		   gz::sim::EntityComponentManager &_ecm,
+		   gz::sim::EventManager & /*_eventMgr*/) override;
 
     /// \brief Update the plugin at each gazebo iteration
   public:
     void PostUpdate(const gz::sim::UpdateInfo &_info,
-      const gz::sim::EntityComponentManager &_ecm) override;
+		    const gz::sim::EntityComponentManager &_ecm) override;
     // \brief ROS node
   private:
     rclcpp::Node::SharedPtr node;
+
   private:
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher;
 
@@ -95,10 +94,10 @@ class gNB_plugin :
     bool debug_logs;
     std::string mnc;
     std::string mcc;
-    gz::sim::Model model{ gz::sim::kNullEntity };
-    gz::sim::Entity linkEntity{ gz::sim::kNullEntity };
-  };
+    gz::sim::Model model{gz::sim::kNullEntity};
+    gz::sim::Entity linkEntity{gz::sim::kNullEntity};
+};
 
-}
+} // namespace phine_plugins
 
 #endif // RS5G_PLUGINS_HH_

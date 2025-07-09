@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, CI-test]
+
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    container:
+      image: osrf/ros:humble-desktop  # Base ROS 2 Humble image
+      options: --user root
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up ROS 2 environment
+        run: |
+          apt update && apt install -y \
+            python3-colcon-common-extensions \
+            wget lsb-release gnupg2 \
+            && rm -rf /var/lib/apt/lists/*
+
+          # Add Gazebo Ignition key and repo (Fortress in this case)
+          echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" > /etc/apt/sources.list.d/gazebo-stable.list
+          wget https://packages.osrfoundation.org/gazebo.key -O - | apt-key add -
+
+          apt update && apt install -y ignition-fortress
+
+      - name: Build phine-plugins with colcon
+        run: |
+          cd phine-plugins
+          source /opt/ros/humble/setup.bash
+          colcon build --event-handlers console_direct+
+        shell: bash
+        
+      - name: Run simple test (optional)
+        run: |
+          echo "CI completed successfully":
+
+  clang-format-check:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install clang-format 14
+        run: |
+          sudo apt update
+          sudo apt install -y clang-format-14
+          sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-14 100
+          clang-format --version
+
+      - name: Run clang-format check
+        run: |
+          FILES=$(find phine-plugins/src/phine_plugins/src -name '*.cc' -o -name '*.hh')
+          echo "Checking the following files:"
+          echo "$FILES"
+          for file in $FILES; do
+            clang-format --dry-run --Werror --style=file "$file"
+          done

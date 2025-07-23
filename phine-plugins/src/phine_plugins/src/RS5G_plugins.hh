@@ -98,6 +98,44 @@ class gNB_plugin : public gz::sim::System,
     gz::sim::Entity linkEntity{gz::sim::kNullEntity};
 };
 
+// The UE_plugin class provides functionality for simulating a User Equipment
+// (UE) in the RoboSim5G environment. It inherits from the System class and
+// implements the ISystemConfigure interface to allow configuration during
+// simulation startup.
+class UE_plugin : public gz::sim::System, public gz::sim::ISystemConfigure {
+  public:
+    UE_plugin();
+
+    ~UE_plugin();
+
+    // Configure the plugin with simulation entities and parameters
+    void Configure(const gz::sim::Entity &_entity,
+		   const std::shared_ptr<const sdf::Element> &_sdf,
+		   gz::sim::EntityComponentManager &_ecm,
+		   gz::sim::EventManager & /*_eventMgr*/) override;
+
+    // Plugin parameters for UE simulation
+    std::string robot_container_name;
+    std::string robot_id;
+    std::string ip_robotUE;
+    std::string netName;
+    std::string subnet_5G;
+    std::string imsi;
+    std::string key;
+    std::string opc;
+    std::string dnn;
+    std::string nssai_sst;
+    std::string nssai_sd;
+    std::string ip_gNB;
+    std::string robot_project_path;
+    std::string ros_gz_bridge_name;
+    std::string robot_project_name;
+    std::string execute_robot_launch_file;
+    std::string robot_launch_file_name;
+    std::string robot_package_name;
+    std::string ros_discovery_server;
+    bool debug_logs;
+};
 } // namespace phine_plugins
 
 #endif // RS5G_PLUGINS_HH_

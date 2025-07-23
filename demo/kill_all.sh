@@ -1,6 +1,8 @@
-#!/bin/bash
-# Stop and rm all gNb containers
+pkill -f ign\ gazebo
+
+cd oai_setup
+docker compose -f docker-compose-ue.yml down
 docker ps -q --filter ancestor=oaisoftwarealliance/oai-gnb:2024.w44 | xargs -I {} docker stop {} && docker ps -a -q --filter ancestor=oaisoftwarealliance/oai-gnb:2024.w44 | xargs -I {} docker rm {}
-# Stop and rm CN containers and network
-cd $PROJECT_PATH/oai_setup && docker-compose down
+docker compose down
+xhost -local:docker
 cd ..

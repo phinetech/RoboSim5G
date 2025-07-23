@@ -19,7 +19,8 @@ limitations under the License.*/
 // what's in the header.
 IGNITION_ADD_PLUGIN(phine_plugins::gNB_plugin, gz::sim::System,
 		    phine_plugins::gNB_plugin::ISystemConfigure,
-		    phine_plugins::gNB_plugin::ISystemPostUpdate)
+		    phine_plugins::gNB_plugin::ISystemPostUpdate
+        )
 
 using namespace phine_plugins;
 
@@ -274,3 +275,4 @@ void gNB_plugin::PostUpdate(const gz::sim::UpdateInfo &_info,
     // Publish the message
     this->publisher->publish(msg);
 }
+

@@ -1,39 +1,106 @@
 version: '3.8'
 services:
-    oai-nr-ue:
-        image: oaisoftwarealliance/oai-nr-ue:2024.w44
+    robot_1:
+        image: ue_amr
         privileged: true
-
-        container_name: oai-nr-ue
-        environment: 
-            USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 -C 3619200000 --rfsimulator.serveraddr 192.168.70.160 --log_config.global_log_options level,nocolor,time
+        container_name: ${NAME_ROBOT_1}
+        environment:
+            USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 -C 3619200000 --rfsimulator.serveraddr ${IP_GNB} --log_config.global_log_options level,nocolor,time
+            ROS_DOMAIN_ID: ${ROS_DOMAIN_ID}
+            IGN_PARTITION: ${IGN_PARTITION}
         networks:
             public_net:
-                ipv4_address: 192.168.70.150
+                ipv4_address: ${IP_ROBOT_1}
+            ros_gz_net:
+                ipv4_address: 192.168.73.150
         volumes:
             - ./conf/ue1.conf:/opt/oai-nr-ue/etc/nr-ue.conf
+
+        entrypoint:
+            - /bin/bash
+            - -c
+            - |
+                source /opt/ros/humble/setup.bash
+                source /app/robot_logic/install/setup.bash
+                export ROS_DISCOVERY_SERVER="${ROS_DISCOVERY_SERVER}"
+                export IGN_TRANSPORT_INTERFACE=192.168.73.150
+                export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds.xml
+                /opt/oai-nr-ue/bin/nr-uesoftmodem -O /opt/oai-nr-ue/etc/nr-ue.conf -E --sa --rfsim -r 106 --numerology 1 -C 3619200000 --rfsimulator.serveraddr ${IP_GNB} --log_config.global_log_options level,nocolor,time &
+                sleep 5
+                (
+                ros2 launch ${ROBOT_PACKAGE_NAME_1} ${ROS_GZ_BRIDGE_NAME_1}
+                ) &
+                if [ "${EXECUTE_ROBOT_LAUNCH_FILE_1}" = "true" ]; then
+                sleep 5
+                (         
+                ros2 launch ${ROBOT_PACKAGE_NAME_1} ${ROBOT_LAUNCH_FILE_NAME_1}
+                ) &
+                fi
+                tail -f /dev/null 
+
         healthcheck:
             test: /bin/bash -c "pgrep nr-uesoftmodem"
             interval: 10s
             timeout: 5s
             retries: 5
-    oai-nr-ue2:
-        image: oaisoftwarealliance/oai-nr-ue:2024.w44
+   
+    rcc:
+        image: rcc
         privileged: true
-        container_name: oai-nr-ue2
-        environment: 
-            USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 001010000000102 -C 3619200000 --rfsimulator.serveraddr 192.168.70.160 --log_config.global_log_options level,nocolor,time
+        container_name: rcc
+        environment:
+            - DISPLAY=${DISPLAY}
+            - QT_X11_NO_MITSHM=1
+            - ROS_DOMAIN_ID=${ROS_DOMAIN_ID}
+            - IGN_PARTITION=${IGN_PARTITION}
         volumes:
-            - ./conf/ue2.conf:/opt/oai-nr-ue/etc/nr-ue.conf
+            - /tmp/.X11-unix:/tmp/.X11-unix:rw
+        stdin_open: true
+        tty: true
         networks:
             public_net:
                 ipv4_address: 192.168.70.151
-        healthcheck:
-            test: /bin/bash -c "pgrep nr-uesoftmodem"
-            interval: 10s
-            timeout: 5s
-            retries: 5
+        entrypoint:
+            - /bin/bash
+            - -c
+            - |
+                source /opt/ros/humble/setup.bash
+                source /app/rviz_rcc/install/setup.bash
+                export ROS_DISCOVERY_SERVER="192.168.70.159:11811"
+                sleep 35
+                ros2 launch rviz_launch rviz_launch.launch.py &
+                tail -f /dev/null 
+           
+            
+    dds_discovery_server:
+        image: dds_discovery_server
+        privileged: true
+        environment:
+            ROS_DOMAIN_ID: ${ROS_DOMAIN_ID}
+        container_name: discovery-server
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.159
+        ports:
+        - "11811:11811"
+        entrypoint:
+            - /bin/bash
+            - -c
+            - |
+                ip route add 10.0.0.0/16 via 192.168.70.134 dev eth0
+                source /opt/ros/humble/setup.bash
+                fastdds discovery -i 0 -l 192.168.70.159 -p 11811 
+
+           
 networks:
     public_net:
         external:
             name: phine-net
+    ros_gz_net:
+        driver: bridge
+        name: ros_gz_net
+        ipam:
+            config:
+                - subnet: 192.168.73.128/26
+        driver_opts:
+            com.docker.network.bridge.name: "ros_gz_net"

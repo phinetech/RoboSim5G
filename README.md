@@ -8,15 +8,15 @@ The table of content of this README file is:
 
 2. [OAI setup](#oai-setup)
 
-3. [Phine.tech gNodeB](#-phine.tech-gnodeb)
+3. [Phine.tech gNodeB](#-phinetech-gnodeb-plugin)
 
-	- [Visualization](#-visualization)
+	- [Visualization](#%EF%B8%8F-visualization)
 	
 	- [gNB plugin](#-gnb-plugin)
 	
 	- [gNB World file declaration](#-gnb-world-file-declaration)
 
-4. [Phine.tech UE](#-phine.tech-ue)
+4. [Phine.tech UE](#-phinetech-ue-plugin)
 
 	- [UE plugin](#-ue-plugin)
 	

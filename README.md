@@ -8,19 +8,19 @@ The table of content of this README file is:
 
 2. [OAI setup](#oai-setup)
 
-3. [Phine.tech gNodeB](#phine.tech-gnodeb)
+3. [Phine.tech gNodeB](#📡-phine.tech-gnodeb)
 
-	- [Visualization](#visualization)
+	- [Visualization](#🖼️-visualization)
 	
-	- [gNB plugin](#gnb-plugin)
+	- [gNB plugin](#🔌-gnb-plugin)
 	
-	- [gNB World file declaration](#gnb-world-file-declaration)
+	- [gNB World file declaration](#🌍-gnb-world-file-declaration)
 
-4. [Phine.tech UE](#phine.tech-ue)
+4. [Phine.tech UE](#📱-phine.tech-ue)
 
-	- [UE plugin](#ue-plugin)
+	- [UE plugin](#🔌-ue-plugin)
 	
-	- [UE World file declaration](#ue-world-file-declaration)
+	- [UE World file declaration](#🌍-ue-world-file-declaration)
 
 5. [Modifying the source code](#modify-gnb-source-code)
 
@@ -264,7 +264,7 @@ export PROJECT_PATH=<your-project-path>  # Must contain oai_setup/
 export IGN_GAZEBO_SYSTEM_PLUGIN_PATH=<path-to-plugins>  # Contains libgNB-plugin.so
 export IGN_GAZEBO_RESOURCE_PATH=<path-to-models>  # Contains phine_gNB model`
 ```
-### 📝 SDF World File Block
+### 📝 gNB World File Declaration
 
 Add the following to your `world-file.sdf` to include the gNB:
 ```xml
@@ -322,13 +322,14 @@ Add the following to your `world-file.sdf` to include the gNB:
 
 ---
 
-## 📱Phine.tech UE plugin
+## 📱 Phine.tech UE plugin
 
 The idea is that, after declaring this plugin inside an SDF Gazebo world, the plugin launches a **robot-UE container** that contains both your robot logic and a **UE process**. This UE process continuously runs to emulate the presence of a 5G modem in your robot.
 
 You will need to define the path to the **launch file** for your robot logic (such as its navigation stack), configure the 5G parameters, and the UE plugin will build the image and launch the container.
 
 However, this plugin is tightly coupled to the system architecture designed by **phine.tech**, and it assumes the following structure:
+
 ![Robosim Architecture](doc/images/robosim_architecture.png)
 ---
 
@@ -425,7 +426,7 @@ The system relies on three main networks:
     - Used for communication between the remote control center and the robot
         
     - Subnet is configurable in `path/demo/oai-setuo/conf/config.yaml`
-### 🔌UE plugin
+### 🔌 UE plugin
 
 #### ✅ UE Plugin Behavior at Load Time
 
@@ -557,7 +558,7 @@ Refer to `path/demo/gazebo_launch` for an example.
 cd path/phine-plugins colcon build
 ```
 _Some warning messages may appear — these can usually be ignored unless they affect functionality._
-### UE World File Configuration
+### 📝 UE World File Declaration
 
 The majority of parameters for the **UE plugin** are tailored to the framework demonstrated in the provided `path/demo`. If you plan to adapt this plugin for your own application, you should first understand the structure and logic of the demo, and maintain a similar organization in your project.
 
@@ -635,7 +636,7 @@ To add the UE plugin to your SDF world file, include:
 
 ## Modify source code
 
-The source code of the plugins is at `path/phine-plugins/src/phine_plugins/src`. You can modify it as you wish consulting [Coding Guidelines](https://github.com/phinetech/RoboSim5G/blob/develop/CODE_OF_CONDUCT.md) and [Contributing](https://github.com/phinetech/RoboSim5G/blob/develop/CONTRIBUTING.md) and in case you would like to share your work. Once you have modified the code, delete `path/phine-plugins/log`,`path/phine-plugins/install`,`path/phine-plugins/build` and run in `path/phine-plugins`(with `path` the path to main folder of the repo):
+The source code of the plugins is at `path/phine-plugins/src/phine_plugins/src`. You can modify it as you wish consulting [Coding Guidelines](CODE_OF_CONDUCT.md) and [Contributing](CONTRIBUTING.md) and in case you would like to share your work. Once you have modified the code, delete `path/phine-plugins/log`,`path/phine-plugins/install`,`path/phine-plugins/build` and run in `path/phine-plugins`(with `path` the path to main folder of the repo):
 
 ```
 colcon build

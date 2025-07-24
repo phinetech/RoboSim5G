@@ -155,8 +155,8 @@ void UE_plugin::Configure(const gz::sim::Entity &_entity,
 	"cp -r " + this->robot_project_path + " " + file_path4 +
 	" && docker build --build-arg ROBOT_PROJECT_NAME=" +
 	this->robot_project_name +
-	" --build-arg ROS_DISCOVERY_SERVER=" + this->ros_discovery_server + " -t ue_amr " +
-	file_path4;
+	" --build-arg ROS_DISCOVERY_SERVER=" + this->ros_discovery_server +
+	" -t ue_amr " + file_path4;
     system(docker_build_command.c_str());
 
     // Prepare configuration file modifications for UE

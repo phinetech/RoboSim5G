@@ -45,3 +45,14 @@ demo/images/ue_amr/nav_stack
 
 # debug information files
 *.dwo
+
+*.idea
+*.ide
+# Default ignored files
+/shelf/
+/workspace.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml

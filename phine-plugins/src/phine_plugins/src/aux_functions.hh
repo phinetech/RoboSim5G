@@ -16,14 +16,18 @@ limitations under the License.*/
 #define AUX_FUNCTIONS_HH
 
 #include <algorithm>
+#include <arpa/inet.h>
 #include <cctype>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <regex>
 #include <sdf/sdf.hh>
+#include <set>
 #include <sstream>
 #include <string>
+#include <vector>
+
 // Enum for log levels
 enum class LogLevel { DEBUG, WARN, ERR, INFO };
 
@@ -163,4 +167,35 @@ bool string_to_bool(const std::string &str);
  * the input.
  */
 std::string extractAndConvertToHex(const std::string &input);
+
+/**
+ * @brief Generates a list of IP addresses from a given subnet.
+ *
+ * This function takes a subnet in CIDR notation (e.g., "192.168.1.0/24")
+ * and returns a vector containing all possible IP addresses within that subnet.
+ *
+ * @param subnet The subnet in CIDR notation as a string.
+ * @return std::vector<std::string> A vector of IP addresses as strings.
+ *
+ * @note The function does not validate the subnet format. Invalid input may
+ * result in undefined behavior.
+ */
+std::vector<std::string> generate_ips_from_subnet(const std::string &subnet);
+/**
+ * @brief Replaces the whitelist addresses for network interfaces within a
+ * specified subnet.
+ *
+ * This function updates the whitelist addresses in the given file, ensuring
+ * that only addresses within the provided subnet are included. Useful for
+ * network configuration and access control.
+ *
+ * @param subnet The subnet (in CIDR notation) to filter whitelist addresses.
+ * @param file_path The path to the file containing interface whitelist
+ * addresses.
+ * @param debug If true, enables debug output for troubleshooting.
+ */
+void replace_interface_whitelist_addresses(const std::string &subnet,
+					   const std::string &file_path,
+					   bool debug);
+
 #endif // AUX_FUNCTIONS_HH

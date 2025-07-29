@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles.xsd">
+    <!-- Transport Descriptors -->
+    <transport_descriptors>
+        <!-- Transport 1: Only 10.0.0.2 -->
+        <transport_descriptor>
+            <transport_id>UDP_5G_Only</transport_id>
+            <type>UDPv4</type>
+            <interfaceWhiteList>
+                <address>10.0.0.1</address>
+                <address>10.0.0.10</address>
+                <address>10.0.0.11</address>
+                <address>10.0.0.12</address>
+                <address>10.0.0.13</address>
+                <address>10.0.0.14</address>
+                <address>10.0.0.2</address>
+                <address>10.0.0.3</address>
+                <address>10.0.0.4</address>
+                <address>10.0.0.5</address>
+                <address>10.0.0.6</address>
+                <address>10.0.0.7</address>
+                <address>10.0.0.8</address>
+                <address>10.0.0.9</address>
+                <address>127.0.0.1</address>
+            </interfaceWhiteList>
+        </transport_descriptor>
+    </transport_descriptors>
+
+    <!-- Participant 1: uses only 10.0.0.2 -->
+    <participant profile_name="Participant_5G_Only" is_default_profile="true">
+        <rtps>
+            <userTransports>
+                <transport_id>UDP_5G_Only</transport_id>
+            </userTransports>
+            <useBuiltinTransports>false</useBuiltinTransports>
+            <builtin>
+                <avoid_builtin_multicast>true</avoid_builtin_multicast>
+            </builtin>
+        </rtps>
+    </participant>
+</profiles>

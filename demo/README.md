@@ -1,38 +1,201 @@
-## Running the Demo
-If it is the first time that you run this demo, you firstly need to build the gNB plugin by(considering `path` the path to the main folder of this repo):
-```bash
-cd path/phine-plugins
-colcon build
-```
-In one terminal, launch the core network and set the environment variables (plugin folder location and gazebo model folder location):
-```bash
-cd path/demo
-source start_CN-set_env.sh
-```
-If you get an error, you can launch in the same terminal  `./kill_all.sh` and then relaunch the instruction.
-In the same terminal, launch the gazebo world with 2 gNBs:
-```bash
-ign gazebo world-file.sdf
-```
-two gNBs should appear in the gazebo simulation and in the terminal 2 containers should start. If some parameter related of the gNB should be changed, change the gNB declaration in the world file. It is possible to add another gNB by adding another gNB declaration (ex. gN3).
-To check if the gNBs are working properly, it is possible to see whether they connected to the amf by (wait 5-10 seconds):
-```bash
-docker logs oai-amf
-```
-If everything goes right you should see a table:
-``` |------------------------------gNBs' Information-------------------------|
+## Requirements
 
-    Index    |    Status     |   Global Id    |      gNB Name   |        PLMN              
-      1      |    Connected  |     0x01       |        gNB1     |       001,01      
-      
-      2      |    Connected  |     0x02       |        gNB2     |       001,01
-    -------------------------------------------------------------------------  
+- Gazebo Ignition Fortress
+
+- ROS2 HUMBLE
+
+- Docker
+
+- ros-gz pkg
+
+## Changing Plugin path
+
+In `launch_robot_5G` at line 4 you have to change the path to Gazebo Plugin to your own (sometimes it can be in ~/usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins )
+## Builiding Images ad building ROS2 pkgs
+On a terminal in the main repo directory:
+
 ```
-When the simulation is stopped use the same terminal to stop and remove the containers:
-```bash
+./build_images.sh
+```
+## Running simulation
+
+1. On a terminal launch :
+
+```
+source launch_robot_5G.sh
+```
+
+Insert your password when required.
+
+This command will launch the CN container, the Gazebo Simulation with the OAI gNB embedded (visualization + container) and  the robot-UE container and the RCC container. It will take 40 seconds to start everything, it will finish when Rviz opens.
+The first time you launch the simulation, it might fail since the UE plugin will build the robot-UE plugin for a long time.
+
+2. On Rviz click on "Nav2 goal" and then select a feasible location.
+
+3. Whenever you want, look for the three vertical dot on the top right of Gazebo GUI, click it and in the search box of Gazebo search "UE_Power_Plugin" and "gNB_Power_Plugin". In the Gazebo GUI two buttons will pop up, that will switch on or off the UE and gNB of the robot.
+
+4. Press the gNB button, that will switch both gNB and UE off.
+
+5. The robot will continue its path (or it will stay still if he does not have one), you can try to give another goal but the communication won' t be enabled
+
+6. Switch on the UE and gNB from the buttons
+
+7. Give another Nav2 Goal or wait for the robot to finish its path
+
+## Remove all the container and kill gazebo
+
+In the main folder:
+
+```
+
 ./kill_all.sh
-```
-It is important to use the same terminal since this `.sh` file uses the environment variable exported by `start_CN-set_env.sh`.
 
-## Modify gNB parameters 
-Inside `world-file.sdf` the two gNB are declared between line 55 and 83, you can modify those parameters following the `World file declaration` section of [README.md](https://github.com/phinetech/RoboSim5G/blob/develop/README.md) in the main folder of this repository. You can add another gNB by copying the declaration and changing the name and pose fields.
+```
+
+## Modify gNB parameters
+
+Inside `gazebo_launch/src/ign_turtlebot/worlds/world_only.sdf`change the parameters at line 106.
+
+```xml
+
+
+<include>
+
+  
+
+<uri>model://phine_gNB</uri>
+
+  
+
+<name>gNB1</name>
+
+  
+
+<pose>-6.8 1 7 0 0 0</pose>
+
+  
+
+<plugin name="phine_plugins::gNB_plugin" filename="gNB_plugin">
+
+  
+
+<link_name>phine_cell</link_name>
+
+  
+
+<net_name>phine-net</net_name>
+
+  
+
+<IP_GNB>192.168.70.160</IP_GNB>
+
+  
+
+<IP_AMF>192.168.70.132</IP_AMF>
+
+  
+
+<debug>false</debug>
+
+  
+
+<mobile_country_code>001</mobile_country_code>
+
+  
+
+<mobile_network_code>01</mobile_network_code>
+
+  
+
+</plugin>
+
+  
+
+</include>
+
+```
+## Modify UE parameters
+Inside `gazebo_launch/src/ign_turtlebot/worlds/world_only.sdf`change the parameters at line 56.
+```xml
+<plugin name="phine_plugins::UE_plugin" filename="UE_plugin">
+
+<robot_container_name>ue_turtlebot</robot_container_name>
+
+<robot_id>1</robot_id>
+
+<ip_robotUE>192.168.70.150</ip_robotUE>
+
+<net_name>phine-net</net_name>
+
+<ip_gnb>192.168.70.160</ip_gnb>
+
+<debug>true</debug>
+
+<subnet_5G>10.0.0.0/28</subnet_5G>
+
+<imsi>001010000000101</imsi>
+
+<key>fec86ba6eb707ed08905757b1bb44b8f</key>
+
+<opc>C42449363BBAD02B66D16BC975D77CC1</opc>
+
+<dnn>oai</dnn>
+
+<nssai_sst>1</nssai_sst>
+
+<nssai_sd>no</nssai_sd>
+
+<robot_project_path>${PROJECT_PATH}/nav_stack</robot_project_path>
+
+<robot_project_name>nav_stack</robot_project_name>
+
+<execute_robot_launch_file>true</execute_robot_launch_file>
+
+<robot_package_name>ign_turtlebot</robot_package_name>
+
+<ros_gz_bridge_name>ros_gz_bridge.launch.py</ros_gz_bridge_name>
+
+<robot_launch_file_name>nav_stack.launch.py</robot_launch_file_name>
+
+<ros_discovery_server>192.168.70.159:11811</ros_discovery_server>
+
+</plugin>
+```
+
+## Remove CN from launch file
+
+In `launch_robot_5G.sh` comment:
+
+```sh
+
+cd oai_setup
+
+docker compose up -d
+
+cd ..
+
+```
+
+## Changing ROS DOMAIN (avoiding multi-user bugs)
+
+In `launch_robot_5G.sh` modify with the ID that you want(each PC should have its own):
+
+```
+
+export ROS_DOMAIN_ID=ID
+
+```
+
+## Changing GZ partion(avoiding multi-user bugs)
+
+In `launch_robot_5G.sh` modify with the partion that you want(each PC should have its own):
+
+```
+
+export IGN_PARTITION=partition_name
+
+```
+
+## Using the Button UE and gNB plugin
+
+If you change the container name in the gNB and UE declarations, you should match the same container names for the two environment variable in `launch_robot_5G.sh`: `GNB_NAME_FOR_BUTTON` , `UE_NAME_FOR_BUTTON`.

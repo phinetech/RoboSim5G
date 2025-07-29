@@ -163,7 +163,7 @@ amf:
 smf:
   ue_mtu: 1500
   support_features:
-    use_local_subscription_info: yes # Use infos from local_subscription_info or from UDM
+    use_local_subscription_info: no # Use infos from local_subscription_info or from UDM
     use_local_pcc_rules: no # Use infos from local_pcc_rules or from PCF
   # we resolve from NRF, this is just to configure usage_reporting
   upfs:

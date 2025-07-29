@@ -14,16 +14,16 @@ All types of contributions are encouraged and valued. See the [Table of Contents
 ## Code of Conduct
 
 This project and everyone participating in it is governed by the
-[RoboSim5g Code of Conduct](https://github.com/phinetech/RoboSim5G/blob/develop/CODE_OF_CONDUCT.md).
+[RoboSim5g Code of Conduct](CODE_OF_CONDUCT.md).
 By participating, you are expected to uphold this code. Please report unacceptable behavior
 to <riccardo.belletti@phine.tech>.
 
 
 ## I Have a Question
 
-> If you want to ask a question, we assume that you have read the available [README](https://github.com/phinetech/RoboSim5G/blob/develop/README.md) file.
+> If you want to ask a question, we assume that you have read the available [README](README.md) file.
 
-Before you ask a question, it is best to search for existing [Issues](https://gitlab.com/phine-oss/robosim5g/issues) that might help you. In case you have not found a suitable issue and still need clarification, you can write on our [slack chat](https://join.slack.com/t/robosimworkspace/shared_invite/zt-38i7sbsit-FpsT6d7PU241~nGz0fcUig). You can also write directly to <riccardo.belletti@phine.tech> to receive a private answer. It is also advisable to search the internet for answers first. 
+Before you ask a question, it is best to search for existing [Issues](https://github.com/phinetech/RoboSim5G/issues) that might help you. In case you have not found a suitable issue and still need clarification, you can write on our [slack chat](https://join.slack.com/t/robosimworkspace/shared_invite/zt-38i7sbsit-FpsT6d7PU241~nGz0fcUig). You can also write directly to <riccardo.belletti@phine.tech> to receive a private answer. It is also advisable to search the internet for answers first. 
 You can also write an Issue on github, following these points:
 
 - Open an [Issue](https://github.com/phinetech/RoboSim5G/issues).
@@ -79,7 +79,7 @@ This section guides you through submitting an enhancement suggestion for RoboSim
 #### Before Submitting an Enhancement
 
 - Make sure that you are using the latest version.
-- Read the [README](https://github.com/phinetech/RoboSim5G/blob/develop/README.md) file carefully and find out if the functionality is already covered, maybe by an individual configuration.
+- Read the [README](README.md) file carefully and find out if the functionality is already covered, maybe by an individual configuration.
 - Perform a [search](https://github.com/phinetech/RoboSim5G/issues) to see if the enhancement has already been suggested. If it has, add a comment to the existing issue instead of opening a new one.
 - Find out whether your idea fits with the scope and aims of the project. It's up to you to make a strong case to convince the project's developers of the merits of this feature. Keep in mind that we want features that will be useful to the majority of our users and not just a small subset. If you're just targeting a minority of users, consider writing an add-on/plugin library.
 

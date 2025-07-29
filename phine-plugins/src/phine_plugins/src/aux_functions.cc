@@ -433,3 +433,116 @@ std::string extractAndConvertToHex(const std::string &input) {
 	return "No number found at the end of the string";
     }
 }
+
+/**
+ * @brief Generates a list of IP addresses within a given IPv4 subnet (CIDR
+ * notation).
+ *
+ * This function parses the provided subnet string (e.g., "192.168.1.0/24"),
+ * calculates the range of valid host IP addresses (excluding network and
+ * broadcast addresses), and returns them as a vector of strings.
+ *
+ * @param subnet The subnet in CIDR notation (e.g., "192.168.1.0/24").
+ * @return std::vector<std::string> List of IP addresses within the subnet.
+ *
+ * @note Returns an empty vector if the input is invalid or if no usable IPs
+ * exist.
+ */
+std::vector<std::string> generate_ips_from_subnet(const std::string &subnet) {
+    std::vector<std::string> result;
+    size_t slash_pos = subnet.find('/');
+    if (slash_pos == std::string::npos)
+	return result;
+
+    std::string base_ip = subnet.substr(0, slash_pos);
+    int prefix = std::stoi(subnet.substr(slash_pos + 1));
+
+    in_addr addr;
+    if (inet_aton(base_ip.c_str(), &addr) == 0)
+	return result;
+
+    uint32_t ip = ntohl(addr.s_addr);
+    uint32_t mask = (0xFFFFFFFF << (32 - prefix)) & 0xFFFFFFFF;
+    uint32_t start = (ip & mask) + 1; // skip network address
+    uint32_t end = (ip | ~mask) - 1;  // skip broadcast address
+
+    // Loop through all usable host IPs in the subnet
+    for (uint32_t i = start; i <= end; ++i) {
+	in_addr current;
+	current.s_addr = htonl(i);
+	result.push_back(inet_ntoa(current)); // convert to string
+    }
+
+    return result;
+}
+
+/**
+ * @brief Replaces the <interfaceWhiteList> block in an XML file with addresses
+ * generated from a given subnet.
+ *
+ * This function reads the specified file, generates a list of IP addresses from
+ * the provided subnet, and replaces the contents of the <interfaceWhiteList>
+ * XML block with these addresses, ensuring that "127.0.0.1" is always included.
+ * The updated content is then written back to the file.
+ *
+ * @param subnet The subnet string (e.g., "192.168.1.0/24") from which IP
+ * addresses are generated.
+ * @param file_path The path to the XML file to be modified.
+ * @param debug Optional flag to enable debug logging (default: false).
+ *
+ * @note Logs errors if the file cannot be opened, the subnet is invalid, or the
+ * file cannot be written.
+ * @note Uses regex to match and replace the <interfaceWhiteList> block in a
+ * multiline-safe manner.
+ */
+void replace_interface_whitelist_addresses(const std::string &subnet,
+					   const std::string &file_path,
+					   bool debug = false) {
+    (void)debug; // Avoid unused parameter warning
+
+    std::ifstream file_in(file_path);
+    if (!file_in) {
+	RoboSimLogger::Log(LogLevel::ERR, "Failed to open file: " + file_path);
+	return;
+    }
+
+    std::stringstream buffer;
+    buffer << file_in.rdbuf();
+    std::string content = buffer.str();
+    file_in.close();
+
+    std::vector<std::string> ips = generate_ips_from_subnet(subnet);
+    if (ips.empty()) {
+	RoboSimLogger::Log(LogLevel::ERR, "Invalid or empty subnet: " + subnet);
+	return;
+    }
+
+    std::set<std::string> unique_ips(ips.begin(), ips.end());
+    unique_ips.insert("127.0.0.1"); // ensure loopback
+
+    std::stringstream new_block;
+    for (const std::string &ip : unique_ips) {
+	new_block << "                <address>" << ip << "</address>\n";
+    }
+
+    // ✅ Use regex that matches multiline blocks
+    std::regex whitelist_block(
+	R"(<interfaceWhiteList>[\s\S]*?</interfaceWhiteList>)");
+    content = std::regex_replace(content, whitelist_block,
+				 "<interfaceWhiteList>\n" + new_block.str() +
+				     "            </interfaceWhiteList>");
+
+    std::ofstream file_out(file_path, std::ios::trunc);
+    if (!file_out) {
+	RoboSimLogger::Log(LogLevel::ERR,
+			   "Failed to write to file: " + file_path);
+	return;
+    }
+
+    file_out << content;
+    file_out.close();
+
+    RoboSimLogger::Log(
+	LogLevel::DEBUG,
+	"Successfully updated <interfaceWhiteList> with subnet: " + subnet);
+}

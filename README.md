@@ -39,7 +39,7 @@ The project has been tested with:
 
 - Docker version 27.5.1, build 9f9e405
 
-- docker-compose version 1.29.2
+- Docker Compose version v2.33.1
 
 - gazebo ignition fortress 2.6.9
 

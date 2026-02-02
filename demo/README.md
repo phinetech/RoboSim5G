@@ -10,7 +10,7 @@
 
 ## Changing Plugin path
 
-In `launch_robot_5G` at line 4 you have to change the path to Gazebo Plugin to your own (sometimes it can be in ~/usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins )
+In `launch_robot_5G` at line 4 you have to change the path to Gazebo Plugin to your own (sometimes it can be in /usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins )
 ## Builiding Images ad building ROS2 pkgs
 On a terminal in the main repo directory:
 
@@ -36,7 +36,7 @@ The first time you launch the simulation, it might fail since the UE plugin will
 
 4. Press the gNB button, that will switch both gNB and UE off.
 
-5. The robot will continue its path (or it will stay still if he does not have one), you can try to give another goal but the communication won' t be enabled
+5. The robot will continue its path (or it will stay still if he does not have one), you can try to give another goal but the communication won't be enabled
 
 6. Switch on the UE and gNB from the buttons
 

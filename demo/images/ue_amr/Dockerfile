@@ -62,7 +62,7 @@ RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc
 RUN echo "export RMW_IMPLEMENTATION=rmw_fastrtps_cpp" >> ~/.bashrc
 RUN echo "export ROS_DISCOVERY_SERVER="$ROS_DISCOVERY_SERVER"" >> ~/.bashrc
-RUN echo "export IGN_TRANSPORT_INTERFACE=192.168.73.150" >> ~/.bashrc
+RUN echo "export IGN_IP=192.168.73.150" >> ~/.bashrc
 RUN echo "source /app/robot_logic/install/setup.bash" >> ~/.bashrc
 RUN echo "export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds.xml" >> ~/.bashrc
 

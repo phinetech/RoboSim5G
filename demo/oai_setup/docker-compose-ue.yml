@@ -26,12 +26,11 @@ services:
                 export IGN_IP=192.168.73.150
                 export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds.xml
                 /opt/oai-nr-ue/bin/nr-uesoftmodem -O /opt/oai-nr-ue/etc/nr-ue.conf -E --sa --rfsim -r 106 --numerology 1 -C 3619200000 --rfsimulator.serveraddr ${IP_GNB} --log_config.global_log_options level,nocolor,time &
-                sleep 5
+                ./wait_for_ue_connected.sh
                 (
                 ros2 launch ${ROBOT_PACKAGE_NAME_1} ${ROS_GZ_BRIDGE_NAME_1}
                 ) &
                 if [ "${EXECUTE_ROBOT_LAUNCH_FILE_1}" = "true" ]; then
-                sleep 5
                 (         
                 ros2 launch ${ROBOT_PACKAGE_NAME_1} ${ROBOT_LAUNCH_FILE_NAME_1}
                 ) &

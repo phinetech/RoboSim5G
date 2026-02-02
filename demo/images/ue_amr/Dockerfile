@@ -54,7 +54,11 @@ WORKDIR /app
 
 COPY ./dds.xml .
 
+COPY ./wait_for_ue_connected.sh /app/wait_for_ue_connected.sh
+RUN chmod +x /app/wait_for_ue_connected.sh 
+
 COPY $ROBOT_PROJECT_NAME robot_logic
+
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
     cd /app/robot_logic && \
     colcon build"

@@ -1,0 +1,144 @@
+version: '3.8'
+services:
+    robot_1:
+        image: ue_amr
+        privileged: true
+        container_name: ${NAME_ROBOT_1}
+        environment:
+            USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 -C 3619200000 --rfsimulator.serveraddr ${IP_GNB} --log_config.global_log_options level,nocolor,time
+            ROS_DOMAIN_ID: ${ROS_DOMAIN_ID}
+            IGN_PARTITION: ${IGN_PARTITION}
+        networks:
+            public_net:
+                ipv4_address: ${IP_ROBOT_1}
+            ros_gz_net:
+                ipv4_address: 192.168.73.150
+        volumes:
+            - ./conf/ue1.conf:/opt/oai-nr-ue/etc/nr-ue.conf
+
+        entrypoint:
+            - /bin/bash
+            - -c
+            - |
+                source /opt/ros/humble/setup.bash
+                source /app/robot_logic/install/setup.bash
+                export ROS_DISCOVERY_SERVER="${ROS_DISCOVERY_SERVER}"
+                export IGN_IP=192.168.73.150
+                export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds.xml
+                /opt/oai-nr-ue/bin/nr-uesoftmodem -O /opt/oai-nr-ue/etc/nr-ue.conf -E --sa --rfsim -r 106 --numerology 1 -C 3619200000 --rfsimulator.serveraddr ${IP_GNB} --log_config.global_log_options level,nocolor,time &
+                ./wait_for_ue_connected.sh
+                (
+                ros2 launch ${ROBOT_PACKAGE_NAME_1} ${ROS_GZ_BRIDGE_NAME_1}
+                ) &
+                if [ "${EXECUTE_ROBOT_LAUNCH_FILE_1}" = "true" ]; then
+                (         
+                ros2 launch ${ROBOT_PACKAGE_NAME_1} ${ROBOT_LAUNCH_FILE_NAME_1}
+                ) &
+                fi
+                tail -f /dev/null 
+
+        healthcheck:
+            test: /bin/bash -c "pgrep nr-uesoftmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+   
+    rcc:
+        image: rcc
+        privileged: true
+        container_name: rcc
+        environment:
+            - DISPLAY=${DISPLAY}
+            - QT_X11_NO_MITSHM=1
+            - ROS_DOMAIN_ID=${ROS_DOMAIN_ID}
+        volumes:
+            - /tmp/.X11-unix:/tmp/.X11-unix:rw
+        stdin_open: true
+        tty: true
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.151
+        entrypoint:
+            - /bin/bash
+            - -c
+            - |
+                source /opt/ros/humble/setup.bash
+                source /app/rviz_rcc/install/setup.bash
+                export ROS_DISCOVERY_SERVER="192.168.70.159:11811"
+                ip route add 10.0.0.0/16 via 192.168.70.134 dev eth0
+                sleep 35
+                ros2 launch rviz_launch rviz_launch.launch.py &
+                tail -f /dev/null 
+           
+            
+    dds_discovery_server:
+        image: dds_discovery_server
+        privileged: true
+        environment:
+            ROS_DOMAIN_ID: ${ROS_DOMAIN_ID}
+        container_name: discovery-server
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.159
+        ports:
+        - "11811:11811"
+        entrypoint:
+            - /bin/bash
+            - -c
+            - |
+                ip route add 10.0.0.0/16 via 192.168.70.134 dev eth0
+                source /opt/ros/humble/setup.bash
+                fastdds discovery -i 0 -l 192.168.70.159 -p 11811 
+
+    simulation:
+        image: simulation
+        privileged: true
+        container_name: simulation
+        environment:
+            - DISPLAY=${DISPLAY}
+            - QT_X11_NO_MITSHM=1
+            - ROS_DOMAIN_ID= ${ROS_DOMAIN_ID}
+            - IGN_PARTITION=${IGN_PARTITION}  
+            - GNB_NAME_FOR_BUTTON=${GNB_NAME_FOR_BUTTON}
+            - UE_NAME_FOR_BUTTON=${UE_NAME_FOR_BUTTON}
+            - PROJECT_PATH=/app
+            - DEMO_PROJECT_PATH=${DEMO_PROJECT_PATH}
+            - ROS_DISCOVERY_SERVER="192.168.70.159:11811"
+            - IGN_IP=192.168.73.151          
+        volumes:
+            - /tmp/.X11-unix:/tmp/.X11-unix:rw
+            - /var/run/docker.sock:/var/run/docker.sock
+        stdin_open: true
+        tty: true
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.152
+            ros_gz_net:
+                ipv4_address: 192.168.73.151
+        entrypoint:
+            - /bin/bash
+            - -c
+            - |
+                if ip -4 addr show eth0 | grep -q "192.168.73"; then
+                    echo "Wrong interface order detected. Swapping eth0 and eth1..."
+                    ip link set eth0 name eth_temp
+                    ip link set eth1 name eth0
+                    ip link set eth_temp name eth1
+                else
+                    echo "Interface order is correct (eth0 is public_net)."
+                fi
+                source /opt/ros/humble/setup.bash
+                source /app/gazebo_launch/install/setup.bash
+                export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds.xml
+                export IGN_GAZEBO_SYSTEM_PLUGIN_PATH=${IGN_GAZEBO_SYSTEM_PLUGIN_PATH}:/usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins:/opt/ros/humble/lib
+                ip route add 10.0.0.0/16 via 192.168.70.134 dev eth0
+                ros2 launch ign_turtlebot gazebo_launch.launch.py &
+                tail -f /dev/null 
+           
+networks:
+    public_net:
+        external:
+            name: phine-net
+    ros_gz_net:
+        external:
+            name: ros_gz_net

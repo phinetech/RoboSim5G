@@ -1,0 +1,23 @@
+# as an example to have SUPI / IMSI specific QoS policies
+
+decision_supi1:
+  supi_imsi: "001010000000101"
+  pcc_rules: 
+#    - gbr-rule-5qi-1
+    - non-gbr-rule-5qi-9
+
+
+decision_slice_1:
+  slice: 
+    sst: 1
+    sd: "FFFFFF"
+  pcc_rules:
+    - non-gbr-rule-5qi-9
+
+decision_slice_2:
+  slice:
+    sst: 1
+    sd: "000001"
+  pcc_rules:
+    - gbr-rule-5qi-5
+    - non-gbr-rule-5qi-9

@@ -104,12 +104,15 @@ services:
             - PROJECT_PATH=/app
             - DEMO_PROJECT_PATH=${DEMO_PROJECT_PATH}
             - ROS_DISCOVERY_SERVER="192.168.70.159:11811"
-            - IGN_IP=192.168.73.151          
+            - IGN_IP=192.168.73.151  
+            - NVIDIA_VISIBLE_DEVICES=all
+            - NVIDIA_DRIVER_CAPABILITIES=all        
         volumes:
             - /tmp/.X11-unix:/tmp/.X11-unix:rw
             - /var/run/docker.sock:/var/run/docker.sock
         stdin_open: true
         tty: true
+        runtime: ${GPU_RUNTIME:-runc}
         networks:
             public_net:
                 ipv4_address: 192.168.70.152
@@ -126,6 +129,13 @@ services:
                     ip link set eth_temp name eth1
                 else
                     echo "Interface order is correct (eth0 is public_net)."
+                fi
+                if [ "$GPU_RUNTIME" = "nvidia" ]; then
+                    echo "NVIDIA runtime detected. Enabling GPU offload..."
+                    export __NV_PRIME_RENDER_OFFLOAD=1
+                    export __GLX_VENDOR_LIBRARY_NAME=nvidia
+                else
+                    echo "Standard runtime detected. Proceeding without NVIDIA offload."
                 fi
                 source /opt/ros/humble/setup.bash
                 source /app/gazebo_launch/install/setup.bash

@@ -5,6 +5,7 @@ export IGN_GAZEBO_SYSTEM_PLUGIN_PATH=~/workspace/install/lib
 export ROS_DISCOVERY_SERVER="192.168.70.159:11811"
 export GNB_NAME_FOR_BUTTON="gNB1"
 export UE_NAME_FOR_BUTTON="ue_turtlebot"
+export GPU_RUNTIME="nvidia"
 
 
 cd oai_setup

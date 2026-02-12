@@ -64,6 +64,7 @@ WORKDIR /app
 
 # Copy your workspace source code
 COPY gazebo_launch gazebo_launch
+COPY nav_stack nav_stack
 COPY dds.xml dds.xml
 COPY oai_setup oai_setup
 COPY images images

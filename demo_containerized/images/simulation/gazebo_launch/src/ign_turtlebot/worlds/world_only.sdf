@@ -1,0 +1,121 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="empty">
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin
+      filename="ignition-gazebo-physics-system"
+      name="ignition::gazebo::systems::Physics">
+    </plugin>
+    <plugin
+      filename="ignition-gazebo-user-commands-system"
+      name="ignition::gazebo::systems::UserCommands">
+    </plugin>
+    <plugin
+      filename="ignition-gazebo-scene-broadcaster-system"
+      name="ignition::gazebo::systems::SceneBroadcaster">
+    </plugin>
+    <plugin
+      filename="ignition-gazebo-contact-system"
+      name="ignition::gazebo::systems::Contact">
+    </plugin>
+    <plugin
+      filename="libignition-gazebo-sensors-system.so"
+      name="ignition::gazebo::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="libignition-gazebo-imu-system.so"
+      name="ignition::gazebo::systems::Imu">
+    </plugin>
+
+    <light name="Warehouse_CeilingLight_003" type="point">
+      <pose>0 0 8.5 0 0 0</pose>
+      <diffuse>0.5 0.5 0.5 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>80</range>
+        <constant>0.3</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <cast_shadows>1</cast_shadows>
+      <direction>0.1 0.1 -1</direction>
+    </light>
+
+    <gui fullscreen='0'>
+        <camera name='user_camera'>
+            <pose frame=''>-4.70385 10.895 16.2659 -0 0.921795 -1.12701</pose>
+            <view_controller>orbit</view_controller>
+            <projection_type>perspective</projection_type>
+        </camera>
+    </gui>
+
+
+    <plugin name="phine_plugins::UE_plugin" filename="UE_plugin">
+      <robot_container_name>ue_turtlebot</robot_container_name>
+      <robot_id>1</robot_id>
+      <ip_robotUE>192.168.70.150</ip_robotUE>
+      <net_name>phine-net</net_name>
+      <ip_gnb>192.168.70.160</ip_gnb>
+      <debug>true</debug>
+      <subnet_5G>10.0.0.0/28</subnet_5G>  
+      <imsi>001010000000101</imsi>
+      <key>fec86ba6eb707ed08905757b1bb44b8f</key>
+      <opc>C42449363BBAD02B66D16BC975D77CC1</opc>
+      <dnn>oai</dnn>
+      <nssai_sst>1</nssai_sst>
+      <nssai_sd>no</nssai_sd>
+      <robot_project_path>${PROJECT_PATH}/nav_stack</robot_project_path>
+      <robot_project_name>nav_stack</robot_project_name>
+      <execute_robot_launch_file>true</execute_robot_launch_file>
+      <robot_package_name>ign_turtlebot</robot_package_name>
+      <ros_gz_bridge_name>ros_gz_bridge.launch.py</ros_gz_bridge_name>
+      <robot_launch_file_name>nav_stack.launch.py</robot_launch_file_name>
+      <ros_discovery_server>192.168.70.159:11811</ros_discovery_server>
+    </plugin>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+            <specular>0.8 0.8 0.8 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <include>
+      <uri>model://phine_gNB</uri>
+      <name>gNB1</name>
+      <pose>-6.8 1 7 0 0 0</pose>
+      <plugin name="phine_plugins::gNB_plugin" filename="gNB_plugin">
+              <link_name>phine_cell</link_name>
+              <net_name>phine-net</net_name>
+              <IP_GNB>192.168.70.160</IP_GNB>
+              <IP_AMF>192.168.70.132</IP_AMF>
+              <debug>false</debug>
+              <mobile_country_code>001</mobile_country_code>  
+              <mobile_network_code>01</mobile_network_code>
+      </plugin>
+    </include>
+  </world>
+</sdf>

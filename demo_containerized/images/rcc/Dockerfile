@@ -32,13 +32,17 @@ RUN apt-get update && \
 
 WORKDIR /app   
 COPY rviz_rcc rviz_rcc
+COPY dds.xml dds.xml
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
     cd /app/rviz_rcc && \
     colcon build"
 
+COPY wait_for_nav_stack.sh wait_for_nav_stack.sh
+RUN chmod +x /app/wait_for_nav_stack.sh
 # Source the ROS setup file
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc
 RUN echo "export RMW_IMPLEMENTATION=rmw_fastrtps_cpp" >> ~/.bashrc
 RUN echo "export ROS_DISCOVERY_SERVER="192.168.70.159:11811"" >> ~/.bashrc
 RUN echo "source /app/rviz_rcc/install/setup.bash" >> ~/.bashrc
+RUN echo "export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds.xml" >> ~/.bashrc
 

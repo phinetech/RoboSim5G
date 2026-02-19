@@ -10,18 +10,10 @@ export GPU_RUNTIME="nvidia"
 
 cd oai_setup
 docker compose up -d 
-sleep 5
-
-
+./wait_for_core_network.sh
 docker compose -f docker-compose-ue.yml up dds_discovery_server -d
-docker network create \
-  --driver bridge \
-  --subnet=192.168.73.128/26 \
-  --opt com.docker.network.bridge.name="ros_gz_net" \
-  ros_gz_net
-
+./create_physical_bridge.sh
 xhost +local:docker
 docker compose -f docker-compose-ue.yml up simulation -d
-sleep 10
 docker compose -f docker-compose-ue.yml up rcc -d
 cd ..

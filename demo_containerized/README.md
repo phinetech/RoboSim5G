@@ -276,6 +276,14 @@ At approximately line 145, update the `entrypoint` or the `command` associated w
 
 ---
 
+## Scripts in `launch-robot_5G_docker.sh` 
+
+### `wait_for_core_network.sh`
+This script ensures that the OAI core network is fully operational before proceeding with the simulation. It waits for the MySQL database container to become healthy and checks that all critical OAI services (`oai-nrf`, `oai-amf`, `oai-smf`, `oai-upf`) are running. The script is called automatically during the simulation launch process to avoid race conditions and ensure a reliable startup sequence.
+
+### `create_physical_bridge.sh`
+This script creates a custom Docker bridge network (`ros_gz_net`) with a specified subnet. It is used to enable communication between simulation containers (such as Gazebo, robot-UE, and network components) on a dedicated network, ensuring proper connectivity and isolation for the simulation environment. The script is executed as part of the launch process and typically does not require manual intervention.
+
 ## Important
 
 After making these changes, remember to rebuild your images to apply the updates to the container layers:

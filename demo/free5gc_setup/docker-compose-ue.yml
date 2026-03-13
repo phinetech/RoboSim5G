@@ -1,0 +1,103 @@
+services:
+    robot_1:
+        image: ue_amr
+        privileged: true
+        container_name: ${NAME_ROBOT_1}
+        environment:
+            USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 -C 361-90°9200000 --rfsimulator.serveraddr ${IP_GNB} --log_config.global_log_options level,nocolor,time
+            ROS_DOMAIN_ID: ${ROS_DOMAIN_ID}
+            IGN_PARTITION: ${IGN_PARTITION}
+        networks:
+            public_net:
+                ipv4_address: ${IP_ROBOT_1}
+            ros_gz_net:
+                ipv4_address: 192.168.73.150
+        volumes:
+            - ./oai/UE_config.yaml:/opt/oai-nr-ue/etc/nr-ue.yaml
+        entrypoint:
+            - /bin/bash
+            - -c
+            - |
+                source /opt/ros/humble/setup.bash
+                source /app/gigabot_xRCC/install/setup.bash
+                export ROS_DISCOVERY_SERVER="192.168.70.159:11811"
+                export IGN_IP=192.168.73.150
+                export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds.xml
+                /opt/oai-nr-ue/bin/nr-uesoftmodem -O /opt/oai-nr-ue/etc/nr-ue.yaml -E --rfsim -r 106 --numerology 1 -C 3319680000 --rfsimulator.serveraddr 192.168.70.160 &
+                sleep 5
+                ros2 launch dmgmori_pkg test.launch.py &
+                sleep 20
+                {       
+                export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds_2d_camera.xml         
+                ros2 run image_transport republish raw compressed --ros-args --remap in:=/camera_2d --remap out/compressed:=/camera_2d/compressed
+                } &
+                sleep 1
+                {
+                export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds_depth_camera.xml
+                ros2 run image_transport republish raw compressed --ros-args --remap in:=/depth_camera_rgb --remap out/compressed:=/camera_depth/compressed
+                }&
+                tail -f /dev/null
+        healthcheck:
+            test: /bin/bash -c "pgrep nr-uesoftmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    rcc:
+        image: rcc
+        privileged: true
+        container_name: rcc
+        environment:
+            - DISPLAY=${DISPLAY}
+            - QT_X11_NO_MITSHM=1
+            - ROS_DOMAIN_ID=${ROS_DOMAIN_ID}
+        volumes:
+            - /tmp/.X11-unix:/tmp/.X11-unix:rw
+        stdin_open: true
+        tty: true
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.151
+        entrypoint:
+            - /bin/bash
+            - -c
+            - |
+                source /opt/ros/humble/setup.bash
+                source /app/rviz_rcc/install/setup.bash
+                export ROS_DISCOVERY_SERVER="192.168.70.159:11811"
+                ip route add 10.60.0.0/16 via 192.168.70.135 dev eth0
+                sleep 10
+                ros2 launch rviz_launch rviz_launch.launch.py &
+                tail -f /dev/null 
+    
+
+    dds_discovery_server:
+        image: dds_discovery_server
+        privileged: true
+        environment:
+            ROS_DOMAIN_ID: ${ROS_DOMAIN_ID}
+        container_name: discovery-server
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.159
+        ports:
+            - "11811:11811"
+        entrypoint:
+            - /bin/bash
+            - -c
+            - |
+                ip route add 10.60.0.0/24 via 192.168.70.135 dev eth0
+                source /opt/ros/humble/setup.bash
+                fastdds discovery -i 0 -l 192.168.70.159 -p 11811 
+
+
+networks:
+    public_net:
+        external: true
+        name : phine-net
+    n6_net:
+        external: true
+        name: demo-oai-n6-net
+    ros_gz_net:
+        external:
+            name: ros_gz_net

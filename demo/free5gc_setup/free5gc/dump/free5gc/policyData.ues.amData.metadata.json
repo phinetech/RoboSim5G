@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"a3c18e2378304db8b571d49c953c5a4f","collectionName":"policyData.ues.amData","type":"collection"}

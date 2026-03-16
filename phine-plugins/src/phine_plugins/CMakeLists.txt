@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.8)
 project(phine_plugins)
 
+# Allow AUTOMOC to process .hh files
+cmake_policy(SET CMP0100 NEW)
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -35,9 +38,36 @@ set_property(TARGET UE_plugin PROPERTY CXX_STANDARD 17)
 
 # adding gazebo gazebo-plugin and ros libraries
 ament_target_dependencies(UE_plugin ignition-plugin${IGN_PLUGIN_VER} ignition-gazebo${IGN_GAZEBO_VER} rclcpp std_msgs)
-# Install the plugin
+
+# ---- NetworkMonitor GUI Plugin ----
+find_package(Qt5 REQUIRED COMPONENTS Core Quick)
+ign_find_package(ignition-gui6 REQUIRED)
+set(IGN_GUI_VER ${ignition-gui6_VERSION_MAJOR})
+
+# Process Qt resource file (embeds QML into the shared library)
+qt5_add_resources(NETWORK_MONITOR_QRC src/NetworkMonitor.qrc)
+
+add_library(NetworkMonitor SHARED
+  src/NetworkMonitor.cc
+  ${NETWORK_MONITOR_QRC}
+)
+set_property(TARGET NetworkMonitor PROPERTY CXX_STANDARD 17)
+set_target_properties(NetworkMonitor PROPERTIES AUTOMOC ON)
+
+target_include_directories(NetworkMonitor PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_link_libraries(NetworkMonitor
+  ignition-gui${IGN_GUI_VER}::ignition-gui${IGN_GUI_VER}
+  ignition-plugin${IGN_PLUGIN_VER}::register
+  Qt5::Core
+  Qt5::Quick
+)
+
+# Install the plugins
 install(TARGETS
-UE_plugin gNB_plugin
+UE_plugin gNB_plugin NetworkMonitor
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

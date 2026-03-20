@@ -67,6 +67,7 @@ COPY gazebo_launch gazebo_launch
 COPY nav_stack nav_stack
 COPY dds.xml dds.xml
 COPY oai_setup oai_setup
+COPY free5gc_setup free5gc_setup
 COPY images images
 
 # Build your workspace

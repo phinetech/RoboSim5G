@@ -77,6 +77,10 @@ class gNB_plugin : public gz::sim::System,
   public:
     void PostUpdate(const gz::sim::UpdateInfo &_info,
 		    const gz::sim::EntityComponentManager &_ecm) override;
+
+  private:
+    void configureOAI(const char *project_path);
+    void configureFree5gc(const char *project_path);
     // \brief ROS node
   private:
     rclcpp::Node::SharedPtr node;
@@ -94,6 +98,10 @@ class gNB_plugin : public gz::sim::System,
     bool debug_logs;
     std::string mnc;
     std::string mcc;
+    std::string cn_type;
+    // free5gc-specific parameters
+    std::string ip_gnb_n3;
+    std::string n3_net_name;
     gz::sim::Model model{gz::sim::kNullEntity};
     gz::sim::Entity linkEntity{gz::sim::kNullEntity};
 };
@@ -114,7 +122,11 @@ class UE_plugin : public gz::sim::System, public gz::sim::ISystemConfigure {
 		   gz::sim::EntityComponentManager &_ecm,
 		   gz::sim::EventManager & /*_eventMgr*/) override;
 
-    // Plugin parameters for UE simulation
+  private:
+    void configureOAI(const char *project_path);
+    void configureFree5gc(const char *project_path);
+
+  public:
     std::string robot_container_name;
     std::string robot_id;
     std::string ip_robotUE;
@@ -134,6 +146,7 @@ class UE_plugin : public gz::sim::System, public gz::sim::ISystemConfigure {
     std::string robot_launch_file_name;
     std::string robot_package_name;
     std::string ros_discovery_server;
+    std::string cn_type;
     bool debug_logs;
 };
 } // namespace phine_plugins

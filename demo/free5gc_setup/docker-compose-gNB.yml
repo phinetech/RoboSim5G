@@ -1,5 +1,5 @@
 services:
-    gNB:
+    gNB :
         image: oaisoftwarealliance/oai-gnb:2026.w04
         privileged: true
         container_name : oai-gNB1

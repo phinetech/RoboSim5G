@@ -1,5 +1,5 @@
 # Use the OAI NR UE base image as the starting point
-FROM phinetech/oai-ue:2026.w04.u22
+FROM oaisoftwarealliance/oai-nr-ue:2024.w44
 
 ARG ROBOT_PROJECT_NAME ROS_DISCOVERY_SERVER
 # Set environment variables for ROS 2 installation

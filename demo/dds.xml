@@ -4,7 +4,7 @@
         <transport_descriptor>
             <transport_id>udp_5g_optimized</transport_id>
             <type>UDPv4</type>
-            <maxMessageSize>1200</maxMessageSize>
+            <maxMessageSize>1400</maxMessageSize>
             <sendBufferSize>1048576</sendBufferSize>
             <receiveBufferSize>1048576</receiveBufferSize>
             <non_blocking_send>true</non_blocking_send>
@@ -37,28 +37,4 @@
             </builtin>
         </rtps>
     </participant>
-    
-    <!-- Default QoS for ALL topics - BEST_EFFORT to reduce retransmissions over 5G -->
-    <data_writer profile_name="default_writer" is_default_profile="true">
-        <qos>
-            <reliability>
-                <kind>BEST_EFFORT</kind>
-            </reliability>
-            <durability>
-                <kind>VOLATILE</kind>
-            </durability>
-        </qos>
-    </data_writer>
-    
-    <data_reader profile_name="default_reader" is_default_profile="true">
-        <qos>
-            <reliability>
-                <kind>BEST_EFFORT</kind>
-            </reliability>
-            <durability>
-                <kind>VOLATILE</kind>
-            </durability>
-        </qos>
-    </data_reader>
-    
 </profiles>

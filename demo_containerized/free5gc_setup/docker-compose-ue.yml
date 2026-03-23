@@ -23,8 +23,8 @@ services:
                 export ROS_DISCOVERY_SERVER="${ROS_DISCOVERY_SERVER}"
                 export IGN_IP=192.168.73.150
                 export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds.xml
-                /opt/oai-nr-ue/bin/nr-uesoftmodem -O /opt/oai-nr-ue/etc/nr-ue.yaml -E --rfsim -r 106 --numerology 1 -C 3319680000 --rfsimulator.serveraddr ${IP_GNB} --log_config.global_log_options level,nocolor,time &
-                ./wait_for_ue_connected.sh
+                /opt/oai-nr-ue/bin/nr-uesoftmodem -O /opt/oai-nr-ue/etc/nr-ue.yaml -E --rfsim -r 106 --numerology 1 -C 3319680000 --rfsimulator.serveraddr ${IP_GNB} &
+                sleep 10
                 (
                 ros2 launch ${ROBOT_PACKAGE_NAME_1} ${ROS_GZ_BRIDGE_NAME_1}
                 ) &
@@ -64,7 +64,7 @@ services:
                 source /app/rviz_rcc/install/setup.bash
                 export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds.xml
                 ip route add 10.60.0.0/16 via 192.168.70.135 dev eth0
-                ./wait_for_nav_stack.sh
+                sleep 20
                 ros2 launch rviz_launch rviz_launch.launch.py &
                 tail -f /dev/null 
            

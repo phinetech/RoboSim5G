@@ -159,8 +159,8 @@ void UE_plugin::configureOAI(const char *project_path) {
     std::string file_path2 = std::string(project_path) + "/oai_setup/conf/ue" +
 			     this->robot_id + ".conf";
     std::string file_path3 =
-	std::string(project_path) + "/images/ue_amr/dds.xml";
-    std::string file_path4 = std::string(project_path) + "/images/ue_amr";
+	std::string(project_path) + "/images/ue_amr_oai/dds.xml";
+    std::string file_path4 = std::string(project_path) + "/images/ue_amr_oai";
 
     // Replace interface whitelist addresses in DDS XML
     replace_interface_whitelist_addresses(this->subnet_5G, file_path3,
@@ -172,7 +172,7 @@ void UE_plugin::configureOAI(const char *project_path) {
 	" && docker build --build-arg ROBOT_PROJECT_NAME=" +
 	this->robot_project_name +
 	" --build-arg ROS_DISCOVERY_SERVER=" + this->ros_discovery_server +
-	" -t ue_amr " + file_path4;
+	" -t ue_amr_oai " + file_path4;
     system(docker_build_command.c_str());
 
     // Prepare configuration file modifications for UE

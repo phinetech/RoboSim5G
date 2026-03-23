@@ -11,7 +11,8 @@ export FASTRTPS_DEFAULT_PROFILES_FILE=$PROJECT_PATH/dds.xml
 cd free5gc_setup
 docker compose up -d 
 sleep 10
-sudo ip route add 10.0.60.0/16 via 192.168.70.135 dev phine-net
+
+sudo ip route add 10.60.0.0/16 via 192.168.70.135 dev phine-net
 docker compose -f docker-compose-ue.yml up dds_discovery_server -d
 ./create_physical_bridge.sh
 cd ..

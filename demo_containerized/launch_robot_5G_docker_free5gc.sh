@@ -10,7 +10,7 @@ export GPU_RUNTIME="nvidia"
 
 cd free5gc_setup
 docker compose up -d 
-./wait_for_core_network.sh
+sleep 10
 docker compose -f docker-compose-ue.yml up dds_discovery_server -d
 ./create_physical_bridge.sh
 xhost +local:docker

@@ -6,9 +6,11 @@ The table of content of this README file is:
 
 1. [Release Versions](#release-versions)
 
-2. [OAI setup](#oai-setup)
+2. [5G Core Network Options](#5g-core-network-options)
 
-3. [Phine.tech gNodeB](#-phinetech-gnodeb-plugin)
+3. [Core Network Setup (Example: OAI)](#core-network-setup-example-oai)
+
+4. [Phine.tech gNodeB](#-phinetech-gnodeb-plugin)
 
 	- [Visualization](#%EF%B8%8F-visualization)
 	
@@ -43,7 +45,24 @@ The project has been tested with:
 
 - gazebo ignition fortress 2.6.9
 
-## OAI setup
+## 5G Core Network Options
+
+RoboSim5G supports **multiple 5G Core Network implementations**. You can choose the one that best fits your needs:
+
+- **OAI (OpenAirInterface)** - High-performance, research-focused implementation
+- **free5GC** - User-friendly with comprehensive WebUI for subscriber management  
+- **Open5GS** *(coming soon)* - Mature implementation with excellent documentation
+
+📖 **See [doc/5G_CORE_NETWORKS.md](doc/5G_CORE_NETWORKS.md) for a detailed comparison and guidance on choosing the right core network.**
+
+Each core network has its own README with setup instructions in the respective `demo/<cn_name>_setup/` folder.
+
+## Core Network Setup (Example: OAI)
+
+The following example uses **OAI**, but similar steps apply to other core networks. Refer to the specific README for each:
+- **OAI**: `demo/oai_setup/README.md`
+- **free5GC**: `demo/free5gc_setup/README.md`
+- **Open5GS**: `demo/open5gs_setup/README.md` *(coming soon)*
 
 Considering `path` the absolute path to the repository, the OAI files can be found in `path/demo/oai_setup`. Inside this folder there are 3 docker-compose file:
 

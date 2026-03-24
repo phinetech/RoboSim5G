@@ -1,0 +1,17 @@
+logger:
+  file:
+    path: /var/log/open5gs/upf.log
+
+global:
+
+upf:
+  pfcp:
+    server:
+      - address: upf.open5gs.org
+    client:
+  gtpu:
+    server:
+      - address: upf.open5gs.org
+  session:
+    - subnet: 10.0.0.0/24
+      gateway: 10.0.0.1

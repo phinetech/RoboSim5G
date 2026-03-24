@@ -81,6 +81,7 @@ class gNB_plugin : public gz::sim::System,
   private:
     void configureOAI(const char *project_path);
     void configureFree5gc(const char *project_path);
+    void configureOpen5gs(const char *project_path);
     // \brief ROS node
   private:
     rclcpp::Node::SharedPtr node;
@@ -125,6 +126,7 @@ class UE_plugin : public gz::sim::System, public gz::sim::ISystemConfigure {
   private:
     void configureOAI(const char *project_path);
     void configureFree5gc(const char *project_path);
+    void configureOpen5gs(const char *project_path);
 
   public:
     std::string robot_container_name;

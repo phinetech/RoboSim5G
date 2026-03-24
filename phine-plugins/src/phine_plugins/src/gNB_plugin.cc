@@ -146,10 +146,12 @@ void gNB_plugin::Configure(const gz::sim::Entity &_entity,
 	configureOAI(project_path);
     } else if (this->cn_type == "free5gc") {
 	configureFree5gc(project_path);
+    } else if (this->cn_type == "open5gs") {
+	configureOpen5gs(project_path);
     } else {
 	RoboSimLogger::Log(LogLevel::ERR,
 			   "Unknown cn_type: " + this->cn_type +
-			       ". Supported values: oai, free5gc");
+			       ". Supported values: oai, free5gc, open5gs");
 	return;
     }
 }
@@ -292,6 +294,50 @@ void gNB_plugin::configureFree5gc(const char *project_path) {
 
     // Launch Docker Compose for the free5gc gNB
     std::string folder_path = std::string(project_path) + "/free5gc_setup";
+    std::string docker_compose_command =
+	"cd " + folder_path +
+	" && docker compose -f docker-compose-gNB.yml up -d";
+    system(docker_compose_command.c_str());
+
+    // Reset the service name for subsequent gNBs
+    modify_service_name(file_path1, new_key, old_key, this->debug_logs);
+}
+
+void gNB_plugin::configureOpen5gs(const char *project_path) {
+    // Define file paths for open5gs setup
+    std::string file_path1 =
+	std::string(project_path) + "/open5gs/docker-compose-gNB.yml";
+    std::string file_path2 =
+	std::string(project_path) + "/open5gs/oai/conf/gNB_config.yaml";
+
+    // Modify Docker Compose file
+    modify_dockerC(file_path1, "container_name", "oai-" + this->model_name,
+		   this->debug_logs);
+    modify_dockerC(file_path1, "ipv4_address", this->ip_gnb, this->debug_logs);
+    modify_dockerC(file_path1, "name", this->netName, this->debug_logs);
+
+    // Update the service name in Docker Compose
+    const std::string old_key = "gNB";
+    const std::string new_key = this->model_name;
+    modify_service_name(file_path1, old_key, new_key, this->debug_logs);
+
+    // Modify gNB YAML configuration file
+    std::string gNB_ID = extractAndConvertToHex(this->model_name);
+
+    modify_yaml_list_entry(file_path2, "Active_gNBs", this->model_name,
+			   this->debug_logs);
+    modify_dockerC(file_path2, "gNB_name", this->model_name, this->debug_logs);
+    modify_dockerC(file_path2, "gNB_ID", gNB_ID, this->debug_logs);
+    modify_dockerC(file_path2, "GNB_IPV4_ADDRESS_FOR_NG_AMF", this->ip_gnb,
+		   this->debug_logs);
+    modify_dockerC(file_path2, "GNB_IPV4_ADDRESS_FOR_NGU", this->ip_gnb,
+		   this->debug_logs);
+    modify_dockerC(file_path2, "mcc", this->mcc, this->debug_logs);
+    modify_dockerC(file_path2, "mnc", this->mnc, this->debug_logs);
+    modify_dockerC(file_path2, "ipv4", this->ip_amf, this->debug_logs);
+
+    // Launch Docker Compose for the open5gs gNB
+    std::string folder_path = std::string(project_path) + "/open5gs";
     std::string docker_compose_command =
 	"cd " + folder_path +
 	" && docker compose -f docker-compose-gNB.yml up -d";

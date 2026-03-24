@@ -69,7 +69,7 @@ COPY dds.xml dds.xml
 COPY oai_setup oai_setup
 COPY free5gc_setup free5gc_setup
 COPY images images
-COPY open5gs open5gs
+COPY open5gs_setup open5gs_setup
 # Build your workspace
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
     cd /app/gazebo_launch && \

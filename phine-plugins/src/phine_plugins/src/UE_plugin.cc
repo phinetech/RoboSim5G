@@ -269,9 +269,9 @@ void UE_plugin::configureFree5gc(const char *project_path) {
 void UE_plugin::configureOpen5gs(const char *project_path) {
     // Define file paths for open5gs setup
     std::string file_path1 =
-	std::string(project_path) + "/open5gs/docker-compose-ue.yml";
+	std::string(project_path) + "/open5gs_setup/docker-compose-ue.yml";
     std::string file_path2 =
-	std::string(project_path) + "/open5gs/oai/conf/UE_config.yaml";
+	std::string(project_path) + "/open5gs_setup/oai/conf/UE_config.yaml";
     std::string file_path3 =
 	std::string(project_path) + "/images/ue_amr/dds.xml";
     std::string file_path4 = std::string(project_path) + "/images/ue_amr";
@@ -298,7 +298,7 @@ void UE_plugin::configureOpen5gs(const char *project_path) {
     modify_dockerC(file_path2, "nssai_sd", this->nssai_sd, this->debug_logs);
 
     // Compose and run Docker container for UE robot
-    std::string folder_path = std::string(project_path) + "/open5gs";
+    std::string folder_path = std::string(project_path) + "/open5gs_setup";
     std::string docker_compose_command =
 	"cd " + folder_path + " && " + "NAME_ROBOT_" + this->robot_id + "=" +
 	this->robot_container_name + " " + "IP_GNB=" + this->ip_gNB + " " +

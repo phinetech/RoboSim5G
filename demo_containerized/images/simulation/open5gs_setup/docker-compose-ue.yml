@@ -13,7 +13,7 @@ services:
             ros_gz_net:
                 ipv4_address: 192.168.73.150
         volumes:
-            - ${DEMO_PROJECT_PATH}/open5gs/oai/conf/UE_config.yaml:/opt/oai-nr-ue/etc/nr-ue.yaml
+            - ${DEMO_PROJECT_PATH}/open5gs_setup/oai/conf/UE_config.yaml:/opt/oai-nr-ue/etc/nr-ue.yaml
         entrypoint:
             - /bin/bash
             - -c

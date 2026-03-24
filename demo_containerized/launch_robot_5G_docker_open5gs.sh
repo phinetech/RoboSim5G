@@ -8,7 +8,7 @@ export UE_NAME_FOR_BUTTON="ue_turtlebot"
 export GPU_RUNTIME="nvidia"
 
 
-cd open5gs
+cd open5gs_setup
 docker compose up -d 
 sleep 10
 docker compose -f docker-compose-ue.yml up dds_discovery_server -d

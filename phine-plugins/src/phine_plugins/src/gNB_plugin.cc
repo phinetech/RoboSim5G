@@ -306,9 +306,9 @@ void gNB_plugin::configureFree5gc(const char *project_path) {
 void gNB_plugin::configureOpen5gs(const char *project_path) {
     // Define file paths for open5gs setup
     std::string file_path1 =
-	std::string(project_path) + "/open5gs/docker-compose-gNB.yml";
+	std::string(project_path) + "/open5gs_setup/docker-compose-gNB.yml";
     std::string file_path2 =
-	std::string(project_path) + "/open5gs/oai/conf/gNB_config.yaml";
+	std::string(project_path) + "/open5gs_setup/oai/conf/gNB_config.yaml";
 
     // Modify Docker Compose file
     modify_dockerC(file_path1, "container_name", "oai-" + this->model_name,
@@ -337,7 +337,7 @@ void gNB_plugin::configureOpen5gs(const char *project_path) {
     modify_dockerC(file_path2, "ipv4", this->ip_amf, this->debug_logs);
 
     // Launch Docker Compose for the open5gs gNB
-    std::string folder_path = std::string(project_path) + "/open5gs";
+    std::string folder_path = std::string(project_path) + "/open5gs_setup";
     std::string docker_compose_command =
 	"cd " + folder_path +
 	" && docker compose -f docker-compose-gNB.yml up -d";

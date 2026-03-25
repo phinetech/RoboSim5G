@@ -94,7 +94,7 @@ Mature open-source implementation with excellent documentation and active commun
 | Core Network | UE IP Pool | Configured In |
 |--------------|------------|---------------|
 | **OAI** | `10.0.0.0/16` | `conf/config.yaml` |
-| **free5GC** | `10.60.0.0/24` | `free5gc/config/smfcfg.yaml` & `oai/oai_upf_config.yaml` |
+| **free5GC** | `10.0.0.0/24` | `free5gc/config/smfcfg.yaml` & `oai/oai_upf_config.yaml` |
 | **Open5GS** | `10.45.0.0/24` | `configs/upf.yaml` |
 
 ### Network Names (DNN)

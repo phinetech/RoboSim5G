@@ -4,6 +4,23 @@
 
 - Docker Compose version v2.33.1
 
+## Choosing a Core Network
+
+RoboSim5G supports **three 5G Core Network implementations**. Each has its own launch and kill scripts:
+
+| Core Network | Launch Script | Kill Script |
+|--------------|--------------|-------------|
+| **OAI** (OpenAirInterface) | `launch_robot_5G_docker.sh` | `kill_all.sh` |
+| **free5GC** | `launch_robot_5G_docker_free5gc.sh` | `kill_all_free5gc.sh` |
+| **Open5GS** | `launch_robot_5G_docker_open5gs.sh` | `kill_all_open5gs.sh` |
+
+**Important:** When you choose a core network, you must also **configure the corresponding Gazebo world file** in the simulation container (see [Configuring Gazebo World for Your CN](#configuring-gazebo-world-for-your-cn) section below).
+
+**Key Difference - free5GC N3 Interface:**
+free5GC uses a **separate N3 network** (`demo-n3` bridge) for the gNB ↔ UPF GTP-U tunnel, while OAI and Open5GS use the main `phine-net` for all communication.
+
+📖 **For detailed comparison and guidance on choosing:** See [doc/5G_CORE_NETWORKS.md](../doc/5G_CORE_NETWORKS.md)
+
 ## Changing Plugin path
 
 In `launch_robot_5G` at line 4 you have to change the path to Gazebo Plugin to your own (sometimes it can be in /usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins)
@@ -15,15 +32,26 @@ On a terminal in the main repo directory:
 ```
 ## Running simulation
 
-1. On a terminal launch :
+1. On a terminal, launch the script for your chosen core network:
 
-```
+**For OAI:**
+```bash
 source launch_robot_5G_docker.sh
+```
+
+**For free5GC:**
+```bash
+source launch_robot_5G_docker_free5gc.sh
+```
+
+**For Open5GS:**
+```bash
+source launch_robot_5G_docker_open5gs.sh
 ```
 
 Insert your password when required.
 
-This command will launch the CN container, the Gazebo Simulation with the OAI gNB embedded (visualization + container) and  the robot-UE container and the RCC container. It will take 40 seconds to start everything, it will finish when Rviz opens.
+These commands will launch the CN container, the Gazebo Simulation with the gNB embedded (visualization + container), the robot-UE container, and the RCC container. It will take 40 seconds to start everything, finishing when Rviz opens.
 The first time you launch the simulation, it might fail since the UE plugin will build the robot-UE plugin for a long time.
 
 2. On Rviz click on "Nav2 goal" and then select a feasible location.
@@ -40,136 +68,140 @@ The first time you launch the simulation, it might fail since the UE plugin will
 
 ## Remove all the container and kill gazebo
 
-In the main folder:
+In the main folder, use the kill script for your chosen core network:
 
+**For OAI:**
+```bash
+./kill_all.sh
 ```
 
-./kill_all.sh
+**For free5GC:**
+```bash
+./kill_all_free5gc.sh
+```
 
+**For Open5GS:**
+```bash
+./kill_all_open5gs.sh
+```
+
+## Configuring Gazebo World for Your CN
+
+**IMPORTANT:** The Gazebo world file in the simulation container must match your chosen core network. Each CN requires different configurations (IMSI, DNN, network addresses, etc.).
+
+### Available World Files
+
+Three world files are provided in `images/simulation/gazebo_launch/src/ign_turtlebot/worlds/`:
+
+- `world_only.sdf` - **For OAI**
+- `world_only_free5gc.sdf` - **For free5GC**
+- `world_only_open5gs.sdf` - **For Open5GS**
+
+### Configure the Launch File
+
+Edit `images/simulation/gazebo_launch/src/ign_turtlebot/launch/gazebo_launch.launch.py` at **line 68**:
+
+```python
+# Change this line to match your chosen CN:
+world = os.path.join(get_package_share_directory('ign_turtlebot'), 
+                     "worlds", "world_only_free5gc.sdf")  # Change filename here
+```
+
+**Examples:**
+- For OAI: `"world_only.sdf"`
+- For free5GC: `"world_only_free5gc.sdf"`
+- For Open5GS: `"world_only_open5gs.sdf"`
+
+After changing the world file, rebuild the simulation container:
+```bash
+./build_images.sh
 ```
 
 ## Modify gNB parameters
 
-Inside `images/simulationgazebo_launch/src/ign_turtlebot/worlds/world_only.sdf`change the parameters at line 106.
+Inside the world file for your chosen CN (see [Configuring Gazebo World for Your CN](#configuring-gazebo-world-for-your-cn)), change the parameters at line 106.
+
+**For OAI:** `images/simulation/gazebo_launch/src/ign_turtlebot/worlds/world_only.sdf`
+**For free5GC:** `images/simulation/gazebo_launch/src/ign_turtlebot/worlds/world_only_free5gc.sdf`
+**For Open5GS:** `images/simulation/gazebo_launch/src/ign_turtlebot/worlds/world_only_open5gs.sdf`
 
 ```xml
-
-
 <include>
-
-  
-
-<uri>model://phine_gNB</uri>
-
-  
-
-<name>gNB1</name>
-
-  
-
-<pose>-6.8 1 7 0 0 0</pose>
-
-  
-
-<plugin name="phine_plugins::gNB_plugin" filename="gNB_plugin">
-
-  
-
-<link_name>phine_cell</link_name>
-
-  
-
-<net_name>phine-net</net_name>
-
-  
-
-<IP_GNB>192.168.70.160</IP_GNB>
-
-  
-
-<IP_AMF>192.168.70.132</IP_AMF>
-
-  
-
-<debug>false</debug>
-
-  
-
-<mobile_country_code>001</mobile_country_code>
-
-  
-
-<mobile_network_code>01</mobile_network_code>
-
-  
-
-</plugin>
-
-  
-
+  <uri>model://phine_gNB</uri>
+  <name>gNB1</name>
+  <pose>-6.8 1 7 0 0 0</pose>
+  <plugin name="phine_plugins::gNB_plugin" filename="gNB_plugin">
+    <cn_type>oai</cn_type>  <!-- Options: oai, free5gc, open5gs -->
+    <link_name>phine_cell</link_name>
+    <net_name>phine-net</net_name>
+    <IP_GNB>192.168.70.160</IP_GNB>
+    <IP_AMF>192.168.70.132</IP_AMF>
+    <debug>false</debug>
+    <mobile_country_code>001</mobile_country_code>
+    <mobile_network_code>01</mobile_network_code>
+  </plugin>
 </include>
-
 ```
+
+**Note:** The `cn_type` parameter specifies which 5G Core Network the plugin should connect to.
 ## Modify UE parameters
-Inside `gazebo_launch/src/ign_turtlebot/worlds/world_only.sdf`change the parameters at line 56.
+
+Inside the world file for your chosen CN (see [Configuring Gazebo World for Your CN](#configuring-gazebo-world-for-your-cn)), change the parameters at line 56.
+
+**For OAI:** `images/simulation/gazebo_launch/src/ign_turtlebot/worlds/world_only.sdf`
+**For free5GC:** `images/simulation/gazebo_launch/src/ign_turtlebot/worlds/world_only_free5gc.sdf`
+**For Open5GS:** `images/simulation/gazebo_launch/src/ign_turtlebot/worlds/world_only_open5gs.sdf`
 ```xml
 <plugin name="phine_plugins::UE_plugin" filename="UE_plugin">
-
-<robot_container_name>ue_turtlebot</robot_container_name>
-
-<robot_id>1</robot_id>
-
-<ip_robotUE>192.168.70.150</ip_robotUE>
-
-<net_name>phine-net</net_name>
-
-<ip_gnb>192.168.70.160</ip_gnb>
-
-<debug>true</debug>
-
-<subnet_5G>10.0.0.0/28</subnet_5G>
-
-<imsi>001010000000101</imsi>
-
-<key>fec86ba6eb707ed08905757b1bb44b8f</key>
-
-<opc>C42449363BBAD02B66D16BC975D77CC1</opc>
-
-<dnn>oai</dnn>
-
-<nssai_sst>1</nssai_sst>
-
-<nssai_sd>no</nssai_sd>
-
-<robot_project_path>${PROJECT_PATH}/nav_stack</robot_project_path>
-
-<robot_project_name>nav_stack</robot_project_name>
-
-<execute_robot_launch_file>true</execute_robot_launch_file>
-
-<robot_package_name>ign_turtlebot</robot_package_name>
-
-<ros_gz_bridge_name>ros_gz_bridge.launch.py</ros_gz_bridge_name>
-
-<robot_launch_file_name>nav_stack.launch.py</robot_launch_file_name>
-
-<ros_discovery_server>192.168.70.159:11811</ros_discovery_server>
-
+  <cn_type>oai</cn_type>  <!-- Options: oai, free5gc, open5gs -->
+  <robot_container_name>ue_turtlebot</robot_container_name>
+  <robot_id>1</robot_id>
+  <ip_robotUE>192.168.70.150</ip_robotUE>
+  <net_name>phine-net</net_name>
+  <ip_gnb>192.168.70.160</ip_gnb>
+  <debug>true</debug>
+  <subnet_5G>10.0.0.0/28</subnet_5G>
+  <imsi>001010000000101</imsi>
+  <key>fec86ba6eb707ed08905757b1bb44b8f</key>
+  <opc>C42449363BBAD02B66D16BC975D77CC1</opc>
+  <dnn>oai</dnn>
+  <nssai_sst>1</nssai_sst>
+  <nssai_sd>no</nssai_sd>
+  <robot_project_path>${PROJECT_PATH}/nav_stack</robot_project_path>
+  <robot_project_name>nav_stack</robot_project_name>
+  <execute_robot_launch_file>true</execute_robot_launch_file>
+  <robot_package_name>ign_turtlebot</robot_package_name>
+  <ros_gz_bridge_name>ros_gz_bridge.launch.py</ros_gz_bridge_name>
+  <robot_launch_file_name>nav_stack.launch.py</robot_launch_file_name>
+  <ros_discovery_server>192.168.70.159:11811</ros_discovery_server>
 </plugin>
 ```
+
+**Note:** The `cn_type` parameter specifies which 5G Core Network the plugin should connect to. Ensure it matches the CN you're using.
 
 ## Remove CN from launch file
 
-In `launch_robot_5G.sh` comment:
+If you want to manage the CN containers separately, you can comment out the CN launch section in your chosen launch script.
 
+**Example for OAI** (`launch_robot_5G_docker.sh`):
 ```sh
+# cd oai_setup
+# docker compose up -d
+# cd ..
+```
 
-cd oai_setup
+**Example for free5GC** (`launch_robot_5G_docker_free5gc.sh`):
+```sh
+# cd free5gc_setup
+# docker compose up -d
+# cd ..
+```
 
-docker compose up -d
-
-cd ..
-
+**Example for Open5GS** (`launch_robot_5G_docker_open5gs.sh`):
+```sh
+# cd open5gs_setup
+# docker compose up -d
+# cd ..
 ```
 
 ## Changing ROS DOMAIN (avoiding multi-user bugs)

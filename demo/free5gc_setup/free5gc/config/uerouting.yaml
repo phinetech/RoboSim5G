@@ -15,7 +15,7 @@ ueRoutingInfo: # the list of UE routing information
       - A: I-UPF
         B: PSA-UPF
     specificPath:
-      - dest: 10.60.0.103/32 # the destination IP address on Data Network (DN)
+      - dest: 10.0.0.103/32 # the destination IP address on Data Network (DN)
         # the order of UPF nodes in this path. We use the UPF's name to represent each UPF node.
         # The UPF's name should be consistent with smfcfg.yaml
         path: [I-UPF]
@@ -45,4 +45,4 @@ pfdDataForApp: # PFDs for an Application
     pfds: # PFDs for the Application
       - pfdID: pfd1 # PFD identifier
         flowDescriptions: # Represents a 3-tuple with protocol, server ip and server port for UL/DL application traffic
-          - permit out ip from 10.60.0.1 8080 to any
+          - permit out ip from 10.0.0.1 8080 to any

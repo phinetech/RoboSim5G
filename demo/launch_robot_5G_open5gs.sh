@@ -6,12 +6,13 @@ export ROS_DISCOVERY_SERVER="192.168.70.159:11811"
 export GNB_NAME_FOR_BUTTON="gNB1"
 export UE_NAME_FOR_BUTTON="ue_turtlebot"
 source $PROJECT_PATH/gazebo_launch/install/setup.bash
+export FASTRTPS_DEFAULT_PROFILES_FILE=$PROJECT_PATH/dds.xml
 
 
 cd open5gs_setup
 docker compose up -d 
 sleep 10
-sudo ip route add 10.0.0.0/16 via 192.168.70.134 dev phine-net
+sudo ip route add 10.0.0.0/24 via 192.168.70.134 dev phine-net
 docker compose -f docker-compose-ue.yml up dds_discovery_server -d
 ./create_physical_bridge.sh
 cd ..

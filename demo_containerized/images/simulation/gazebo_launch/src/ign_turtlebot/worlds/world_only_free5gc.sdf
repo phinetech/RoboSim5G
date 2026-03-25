@@ -61,7 +61,7 @@
       <net_name>phine-net</net_name>
       <ip_gnb>192.168.70.160</ip_gnb>
       <debug>true</debug>
-      <subnet_5G>10.60.0.0/24</subnet_5G>  
+      <subnet_5G>10.0.0.0/24</subnet_5G>  
       <imsi>208930000000001</imsi>
       <key>8baf473f2f8fd09487cccbd7097c6862</key>
       <opc>8e27b6af0e692e750f32667a3b14605d</opc>

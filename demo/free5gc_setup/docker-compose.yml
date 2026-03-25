@@ -266,11 +266,11 @@ services:
             - EBPF_GW_N6_IP_ADDR=192.168.72.135
             - GW_SGI_IP_ADDR=192.168.70.135
             - GW_N3_IP_ADDR=192.168.71.135
-            - UE_IP_ADDRESS_POOL=10.60.0.0/24
+            - UE_IP_ADDRESS_POOL=10.0.0.0/24
             - N6_UPF_IP_ADDR=192.168.72.129
             - SGI_DEMO_OAI_ADDR=192.168.70.129
         healthcheck:
-            test: /bin/bash -c "ip r | grep 10.60.0"
+            test: /bin/bash -c "ip r | grep 10.0.0"
             interval: 10s
             timeout: 5s
             retries: 5

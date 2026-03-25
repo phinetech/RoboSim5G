@@ -63,7 +63,7 @@ services:
                 source /opt/ros/humble/setup.bash
                 source /app/rviz_rcc/install/setup.bash
                 export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds.xml
-                ip route add 10.60.0.0/16 via 192.168.70.135 dev eth0
+                ip route add 10.0.0.0/24 via 192.168.70.135 dev eth0
                 sleep 20
                 ros2 launch rviz_launch rviz_launch.launch.py &
                 tail -f /dev/null 
@@ -84,7 +84,7 @@ services:
             - /bin/bash
             - -c
             - |
-                ip route add 10.60.0.0/24 via 192.168.70.135 dev eth0
+                ip route add 10.0.0.0/24 via 192.168.70.135 dev eth0
                 source /opt/ros/humble/setup.bash
                 fastdds discovery -i 0 -l 192.168.70.159 -p 11811 
 
@@ -139,7 +139,7 @@ services:
                 source /app/gazebo_launch/install/setup.bash
                 export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds.xml
                 export IGN_GAZEBO_SYSTEM_PLUGIN_PATH=${IGN_GAZEBO_SYSTEM_PLUGIN_PATH}:/usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins:/opt/ros/humble/lib
-                ip route add 10.60.0.0/16 via 192.168.70.135 dev eth0
+                ip route add 10.0.0.0/24 via 192.168.70.135 dev eth0
                 ros2 launch ign_turtlebot gazebo_launch.launch.py &
                 tail -f /dev/null 
            

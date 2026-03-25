@@ -198,4 +198,53 @@ void replace_interface_whitelist_addresses(const std::string &subnet,
 					   const std::string &file_path,
 					   bool debug);
 
+/**
+ * @brief Retrieves an optional parameter value from an SDF element, returning a
+ * default if not found.
+ *
+ * @param sdfClone      Pointer to the SDF element to search within.
+ * @param paramName     Name of the parameter to retrieve.
+ * @param paramValue    Reference to a string where the parameter value will be
+ * stored.
+ * @param defaultValue  Default value to use when the parameter is absent.
+ * @return true if the parameter was found, false if the default was used.
+ */
+bool GetOptionalParamFromSDF(sdf::ElementPtr sdfClone,
+			     const std::string &paramName,
+			     std::string &paramValue,
+			     const std::string &defaultValue);
+
+/**
+ * @brief Modifies the Nth occurrence of a key-value pair in a YAML/docker
+ * compose file.
+ *
+ * This is useful when multiple sections contain the same key name (e.g.,
+ * ipv4_address appearing under different network sections).
+ *
+ * @param file_path The path to the file to be modified.
+ * @param key The key whose Nth occurrence should be updated.
+ * @param new_value The new value to assign to the key.
+ * @param occurrence The 1-based occurrence number to modify.
+ * @param debug If true, enables debug output.
+ */
+void modify_dockerC_nth(const std::string &file_path, const std::string &key,
+			const std::string &new_value, int occurrence,
+			bool debug);
+
+/**
+ * @brief Modifies the first list item under a specified parent key in a YAML
+ * file.
+ *
+ * Finds a line matching "parent_key:" and replaces the value in the next line
+ * that starts with "- ".
+ *
+ * @param file_path The path to the YAML file to be modified.
+ * @param parent_key The parent key whose child list item should be updated.
+ * @param new_value The new list item value (without the "- " prefix).
+ * @param debug If true, enables debug output.
+ */
+void modify_yaml_list_entry(const std::string &file_path,
+			    const std::string &parent_key,
+			    const std::string &new_value, bool debug);
+
 #endif // AUX_FUNCTIONS_HH

@@ -1,0 +1,195 @@
+services:
+  db:
+    container_name: db
+    image: mongo:6.0
+    command: "mongod --bind_ip 0.0.0.0 --port 27017"
+    networks:
+      public_net:
+        ipv4_address: 192.168.70.131
+        aliases:
+          - db.open5gs.org
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./db_data:/data/db
+      - ./db_config:/data/configdb
+
+  nrf:
+    container_name: nrf
+    image: borieher/nrf:v2.7.6
+    command: "-c /etc/open5gs/custom/nrf.yaml"
+    networks:
+      public_net:
+        ipv4_address: 192.168.70.130
+        aliases:
+          - nrf.open5gs.org
+    configs:
+      - source: nrf_config
+        target: /etc/open5gs/custom/nrf.yaml
+
+  ausf:
+    container_name: ausf
+    image: borieher/ausf:v2.7.6
+    command: "-c /etc/open5gs/custom/ausf.yaml"
+    networks:
+      public_net:
+        ipv4_address: 192.168.70.138
+        aliases:
+          - ausf.open5gs.org
+    configs:
+      - source: ausf_config
+        target: /etc/open5gs/custom/ausf.yaml
+    depends_on:
+      - nrf
+
+  udm:
+    container_name: udm
+    image: borieher/udm:v2.7.6
+    command: "-c /etc/open5gs/custom/udm.yaml"
+    networks:
+      public_net:
+        ipv4_address: 192.168.70.137
+        aliases:
+          - udm.open5gs.org
+    configs:
+      - source: udm_config
+        target: /etc/open5gs/custom/udm.yaml
+    depends_on:
+      - nrf
+
+  udr:
+    container_name: udr
+    image: borieher/udr:v2.7.6
+    command: "-c /etc/open5gs/custom/udr.yaml"
+    restart: unless-stopped
+    networks:
+      public_net:
+        ipv4_address: 192.168.70.136
+        aliases:
+          - udr.open5gs.org
+    configs:
+      - source: udr_config
+        target: /etc/open5gs/custom/udr.yaml
+    depends_on:
+      - db
+      - nrf
+
+  pcf:
+    container_name: pcf
+    image: borieher/pcf:v2.7.6
+    command: "-c /etc/open5gs/custom/pcf.yaml"
+    restart: unless-stopped
+    networks:
+      public_net:
+        ipv4_address: 192.168.70.139
+        aliases:
+          - pcf.open5gs.org
+    configs:
+      - source: pcf_config
+        target: /etc/open5gs/custom/pcf.yaml
+    depends_on:
+      - db
+      - nrf
+
+  amf:
+    container_name: amf
+    image: borieher/amf:v2.7.6
+    command: "-c /etc/open5gs/custom/amf.yaml"
+    networks:
+      public_net:
+        ipv4_address: 192.168.70.132
+        aliases:
+          - amf.open5gs.org
+    configs:
+      - source: amf_config
+        target: /etc/open5gs/custom/amf.yaml
+    depends_on:
+      - nrf
+    ports:
+      - "38412:38412/sctp"
+
+  smf:
+    container_name: smf
+    image: borieher/smf:v2.7.6
+    command: "-c /etc/open5gs/custom/smf.yaml"
+    networks:
+      public_net:
+        ipv4_address: 192.168.70.133
+        aliases:
+          - smf.open5gs.org
+    configs:
+      - source: smf_config
+        target: /etc/open5gs/custom/smf.yaml
+    depends_on:
+      nrf:
+        condition: service_started
+      upf:
+        condition: service_healthy
+
+  upf:
+    container_name: upf
+    image: borieher/upf:v2.7.6
+    command: "-c /etc/open5gs/custom/upf.yaml"
+    networks:
+      public_net:
+        ipv4_address: 192.168.70.134
+        aliases:
+          - upf.open5gs.org
+    configs:
+      - source: upf_config
+        target: /etc/open5gs/custom/upf.yaml
+    ports:
+      - "2152:2152/udp"
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep open5gs-upfd || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  webui:
+    container_name: webui
+    image: borieher/webui:v2.7.6
+    networks:
+      public_net:
+        ipv4_address: 192.168.70.140
+    ports:
+      - "9999:9999"
+    depends_on:
+      - db
+    environment:
+      DB_URI: mongodb://db:27017/open5gs
+
+networks:
+  public_net:
+    driver: bridge
+    name: phine-net
+    ipam:
+      config:
+        - subnet: 192.168.70.128/26
+    driver_opts:
+      com.docker.network.bridge.name: "phine-net"
+
+volumes:
+  db_data:
+  db_config:
+
+configs:
+  nrf_config:
+    file: configs/nrf.yaml
+  ausf_config:
+    file: configs/ausf.yaml
+  udm_config:
+    file: configs/udm.yaml
+  udr_config:
+    file: configs/udr.yaml
+  pcf_config:
+    file: configs/pcf.yaml
+  amf_config:
+    file: configs/amf.yaml
+  smf_config:
+    file: configs/smf.yaml
+  upf_config:
+    file: configs/upf.yaml

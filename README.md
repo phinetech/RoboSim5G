@@ -1,14 +1,24 @@
 ## gNB and UE Gazebo Plugins
 
-This repository contains the model and the plugins, developed by phine.tech, to simulate the behaviour of a gNB and a UE in Gazebo Ignition. The underlying 5G component are docker containers developed by Open Air Interface(OAI), that have been exploited by phine.tech to make accessible these advance networking modules to the robotic community. The aim is that a roboticist who is not an expert in 5G connectivity can easily simulate its robotic applications in a 5G end-to-end network without knowing the technical details on which the OAI Framework is built on.
+
+There are **two demo modes** provided in this repository:
+
+- **demo_containerized/**: Runs the entire simulation—including Gazebo—inside Docker containers. This is ideal for users who want a fully containerized, reproducible environment with minimal local setup.
+- **demo/**: Runs Gazebo directly on the local machine, while the 5G Core Network and related services are still containerized. This mode is suitable for users who want to leverage their local Gazebo installation for better performance or direct GUI access.
+
+Both demos support all three 5G Core Network options (OAI, free5GC, Open5GS). Choose the mode that best fits your workflow and system configuration.
+
+This repository contains the model and the plugins, developed by phine.tech, to simulate the behaviour of a gNB and a UE in Gazebo Ignition. The plugins are compatible with **three 5G Core Network implementations** (OAI, free5GC, and Open5GS), all deployed as docker containers, making advanced 5G networking accessible to the robotic community. The aim is that a roboticist who is not an expert in 5G connectivity can easily simulate their robotic applications in a 5G end-to-end network without knowing the underlying technical details. Throughout this documentation, **OAI (Open Air Interface) is used as an example**, but the same concepts apply to all supported core networks.
 
 The table of content of this README file is:
 
 1. [Release Versions](#release-versions)
 
-2. [OAI setup](#oai-setup)
+2. [5G Core Network Options](#5g-core-network-options)
 
-3. [Phine.tech gNodeB](#-phinetech-gnodeb-plugin)
+3. [Core Network Setup (Example: OAI)](#core-network-setup-example-oai)
+
+4. [Phine.tech gNodeB](#-phinetech-gnodeb-plugin)
 
 	- [Visualization](#%EF%B8%8F-visualization)
 	
@@ -43,7 +53,24 @@ The project has been tested with:
 
 - gazebo ignition fortress 2.6.9
 
-## OAI setup
+## 5G Core Network Options
+
+RoboSim5G supports **multiple 5G Core Network implementations**. You can choose the one that best fits your needs:
+
+- **OAI (OpenAirInterface)** - High-performance, research-focused implementation
+- **free5GC** - User-friendly with comprehensive WebUI for subscriber management  
+- **Open5GS**  - Mature implementation with excellent documentation
+
+📖 **See [doc/5G_CORE_NETWORKS.md](doc/5G_CORE_NETWORKS.md) for a detailed comparison and guidance on choosing the right core network.**
+
+Each core network has its own README with setup instructions in the respective `demo/<cn_name>_setup/` folder.
+
+## Core Network Setup (Example: OAI)
+
+The following example uses **OAI**, but similar steps apply to other core networks. Refer to the specific README for each:
+- **OAI**: `demo/oai_setup/README.md`
+- **free5GC**: `demo/free5gc_setup/README.md`
+- **Open5GS**: `demo/open5gs_setup/README.md` *(coming soon)*
 
 Considering `path` the absolute path to the repository, the OAI files can be found in `path/demo/oai_setup`. Inside this folder there are 3 docker-compose file:
 
@@ -268,39 +295,21 @@ export IGN_GAZEBO_RESOURCE_PATH=<path-to-models>  # Contains phine_gNB model`
 
 Add the following to your `world-file.sdf` to include the gNB:
 ```xml
-
 <include>
-
-  
-
-<uri>model://phine_gNB</uri>
-
-<name>gNB1</name>
-
-<pose>0 0 1 0 0 0</pose>
-
-<plugin name="phine_plugins::gNB_plugin" filename="gNB_plugin">
-
-<link_name>phine_cell</link_name>
-
-<net_name>phine-net</net_name>
-
-<IP_GNB>192.168.70.159</IP_GNB>
-
-<IP_AMF>192.168.70.132</IP_AMF>
-
-<debug>false</debug>
-
-<mobile_country_code>001</mobile_country_code>
-
-<mobile_network_code>01</mobile_network_code>
-
-</plugin>
-
-  
-
+  <uri>model://phine_gNB</uri>
+  <name>gNB1</name>
+  <pose>0 0 1 0 0 0</pose>
+  <plugin name="phine_plugins::gNB_plugin" filename="gNB_plugin">
+    <cn_type>oai</cn_type>  <!-- Options: oai, free5gc, open5gs -->
+    <link_name>phine_cell</link_name>
+    <net_name>phine-net</net_name>
+    <IP_GNB>192.168.70.159</IP_GNB>
+    <IP_AMF>192.168.70.132</IP_AMF>
+    <debug>false</debug>
+    <mobile_country_code>001</mobile_country_code>
+    <mobile_network_code>01</mobile_network_code>
+  </plugin>
 </include>
-
 ```
 
 
@@ -310,6 +319,7 @@ Add the following to your `world-file.sdf` to include the gNB:
 
 | **Parameter**         | **Description**                                                                                  |
 | --------------------- | ------------------------------------------------------------------------------------------------ |
+| `cn_type`             | Core Network type (`oai`, `free5gc`, or `open5gs`)                                               |
 | `name`                | Name of the gNB instance (e.g., `gNB1`, `gNB2`, ...)  <br>⚠️ **Must follow the `gNB<N>` format** |
 | `pose`                | Pose of the gNB in the world (x y z roll pitch yaw)                                              |
 | `link_name`           | Link whose pose is streamed over ROS 2 (keep as `phine_cell` unless model changes)               |
@@ -394,8 +404,19 @@ To replicate this architecture, it is essential to divide your ROS 2 workspace l
         - RViz launch file
             
         - RViz configuration file
+
+        - routing trough upf or ext-dn to reach the UE (`ip route add <ue_ip_range> via <upf/ext_dn_ip> dev <interface>`)
+
+4. **Discovery server**
+    
+    - enable unicast communication(multicast not available in majority of CN)
+
+    - needs routing trough upf or ext-dn to reach the UE (`ip route add <ue_ip_range> via <upf/ext_dn_ip> dev <interface>`)
+
         
-A good reference is  `path/demo/nav_stack` folder that will be copied inside the robot-UE container for the demo.        
+A good reference is  `path/demo/nav_stack` folder that will be copied inside the robot-UE container for the demo. 
+
+Routing through the upf is necessary for any container in the Data network(outside 5G network).
 
 ---
 
@@ -426,6 +447,110 @@ The system relies on three main networks:
     - Used for communication between the remote control center and the robot
         
     - Subnet is configurable in `path/demo/oai-setuo/conf/config.yaml`
+
+---
+
+#### **DDS Profiles Configuration**
+
+ROS 2 communication over 5G networks requires careful DDS (Data Distribution Service) configuration. The architecture uses **Fast DDS profiles** to control network transport behavior and enable proper discovery across the distributed system.
+
+##### **Why DDS Profiles Are Needed**
+
+- **Multicast not available**: Most 5G Core Networks do not support multicast traffic, requiring **unicast-only** communication
+- **Interface selection**: The UE must communicate exclusively through its 5G tunnel interface, not other network interfaces
+- **Fragmentation prevention**: Large ROS 2 messages must be handled properly to avoid UDP fragmentation issues
+- **Discovery server**: Centralized discovery is needed since multicast discovery won't work over 5G
+
+##### **UE Container DDS Profile**
+
+The robot-UE container uses a restrictive profile that **whitelists only the 5G tunnel interface** (e.g., `10.0.0.x` addresses). This ensures all ROS 2 traffic goes through the 5G network.
+
+**Key configuration** (example from `path/demo/images/ue_amr/dds.xml`):
+
+```xml
+<transport_descriptor>
+    <transport_id>UDP_5G_Only</transport_id>
+    <type>UDPv4</type>
+    <maxMessageSize>1400</maxMessageSize>  <!-- Fragmentation prevention -->
+    <sendBufferSize>1048576</sendBufferSize>
+    <receiveBufferSize>1048576</receiveBufferSize>
+    <non_blocking_send>true</non_blocking_send>
+    <interfaceWhiteList>
+        <address>10.0.0.1</address>
+        <address>10.0.0.2</address>
+        <!-- ... additional 5G tunnel addresses ... -->
+    </interfaceWhiteList>
+</transport_descriptor>
+
+<participant profile_name="Participant_5G_Only" is_default_profile="true">
+    <rtps>
+        <userTransports>
+            <transport_id>UDP_5G_Only</transport_id>
+        </userTransports>
+        <useBuiltinTransports>false</useBuiltinTransports>  <!-- Disable default transports -->
+        <builtin>
+            <avoid_builtin_multicast>true</avoid_builtin_multicast>  <!-- Force unicast -->
+        </builtin>
+    </rtps>
+</participant>
+```
+
+**Important aspects:**
+- `maxMessageSize`: Set to 1400 bytes to prevent UDP fragmentation
+- `interfaceWhiteList`: Restricts communication to 5G tunnel addresses only
+- `useBuiltinTransports: false`: Disables default DDS transports
+- `avoid_builtin_multicast: true`: Forces unicast-only communication
+
+##### **Data Network (RCC/Discovery Server) DDS Profile**
+
+Nodes in the Data Network (like the Remote Control Center) use a **SUPER_CLIENT** profile to connect to the centralized **Discovery Server**.
+
+**Key configuration** (example from `path/demo/images/rcc/dds.xml`):
+
+```xml
+<participant profile_name="participant_profile_client_full_example" is_default_profile="true">
+    <rtps>
+        <builtin>
+            <discovery_config>
+                <discoveryProtocol>CLIENT</discoveryProtocol>  <!-- Client mode -->
+                <discoveryServersList>
+                    <RemoteServer prefix="44.53.00.5f.45.50.52.4f.53.49.4d.41">
+                        <metatrafficUnicastLocatorList>
+                            <locator>
+                                <udpv4>
+                                    <address>192.168.70.159</address>  <!-- Discovery server IP -->
+                                    <port>11811</port>                  <!-- Discovery server port -->
+                                </udpv4>
+                            </locator>
+                        </metatrafficUnicastLocatorList>
+                    </RemoteServer>
+                </discoveryServersList>
+            </discovery_config>
+        </builtin>
+    </rtps>
+</participant>
+```
+
+**Important aspects:**
+- `discoveryProtocol: CLIENT`: Uses centralized discovery instead of multicast
+- `discoveryServersList`: Points to the Discovery Server's IP and port
+- **Unicast locators**: All discovery traffic uses unicast UDP
+
+##### **Discovery Server Configuration**
+
+The Discovery Server itself must be configured with the `SERVER` or `SUPER_SERVER` profile and must be reachable from both:
+- The UE containers (via 5G tunnel with routing through UPF)
+- The Data Network containers (via `public_net`)
+
+**Environment variable** to enable discovery server mode:
+```bash
+export ROS_DISCOVERY_SERVER=<discovery_server_ip>:11811
+```
+
+The Discovery Server IP must match the value in both the UE plugin `<ros_discovery_server>` parameter and the DDS profiles.
+
+---
+
 ### 🔌 UE plugin
 
 #### ✅ UE Plugin Behavior at Load Time
@@ -567,6 +692,7 @@ The majority of parameters for the **UE plugin** are tailored to the framework d
 To add the UE plugin to your SDF world file, include:
 ```xml
 <plugin name="phine_plugins::UE_plugin" filename="UE_plugin">
+	<cn_type>oai</cn_type>  <!-- Options: oai, free5gc, open5gs -->
 	<robot_container_name>ue_turtlebot</robot_container_name>
 	<robot_id>1</robot_id>   
 	<ip_robotUE>192.168.70.150</ip_robotUE>
@@ -595,13 +721,14 @@ To add the UE plugin to your SDF world file, include:
 
 | **Parameter**               | **Description**                                                             |
 | --------------------------- | --------------------------------------------------------------------------- |
+| `cn_type`                   | Core Network type (`oai`, `free5gc`, or `open5gs`)                          |
 | `robot_container_name`      | Name of the UE container to be launched (e.g., `ue_turtlebot`)              |
 | `robot_id`                  | Unique ID for the robot, used to select `UE<robot_id>.conf`                 |
 | `ip_robotUE`                | Static IP assigned to the robot UE container                                |
 | `net_name`                  | Name of the Docker network to attach the UE container                       |
 | `ip_gnb`                    | IP address of the gNB container                                             |
 | `debug`                     | If `true`, plugin will print debug logs                                     |
-| `subnet_5G`                 | Subnet of the 5G network (must match core config, e.g., `10.0.0.0/28`)      |
+| `subnet_5G`                 | Subnet of the 5G network (must match core config, e.g., `10.0.0.0/16`)      |
 | `imsi`                      | Unique identifier for the UE (matches entry in core network config)         |
 | `key`                       | 128-bit cryptographic key shared with 5G core for authentication            |
 | `opc`                       | Operator-specific key used in authentication                                |
@@ -644,6 +771,3 @@ colcon build
 
 The updated plugins will be in `path/phine-plugins/build`.
 
-## Upcoming features
-
-- re-organization and source code of power buttons for UE and gNB 

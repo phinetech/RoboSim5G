@@ -19,29 +19,21 @@ services:
             - -c
             - |
                 source /opt/ros/humble/setup.bash
-                source /app/gigabot_xRCC/install/setup.bash
-                export ROS_DISCOVERY_SERVER="192.168.70.159:11811"
+                source /app/robot_logic/install/setup.bash
+                export ROS_DISCOVERY_SERVER="${ROS_DISCOVERY_SERVER}"
                 export IGN_IP=192.168.73.150
                 export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds.xml
-                /opt/oai-nr-ue/bin/nr-uesoftmodem -O /opt/oai-nr-ue/etc/nr-ue.yaml -E --rfsim -r 106 --numerology 1 -C 3319680000 --rfsimulator.serveraddr 192.168.70.160 &
-                sleep 5
-                ros2 launch dmgmori_pkg test.launch.py &
-                sleep 20
-                {       
-                export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds_2d_camera.xml         
-                ros2 run image_transport republish raw compressed --ros-args --remap in:=/camera_2d --remap out/compressed:=/camera_2d/compressed
-                } &
-                sleep 1
-                {
-                export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds_depth_camera.xml
-                ros2 run image_transport republish raw compressed --ros-args --remap in:=/depth_camera_rgb --remap out/compressed:=/camera_depth/compressed
-                }&
-                tail -f /dev/null
-        healthcheck:
-            test: /bin/bash -c "pgrep nr-uesoftmodem"
-            interval: 10s
-            timeout: 5s
-            retries: 5
+                /opt/oai-nr-ue/bin/nr-uesoftmodem -O /opt/oai-nr-ue/etc/nr-ue.yaml -E --rfsim -r 106 --numerology 1 -C 3319680000 --rfsimulator.serveraddr ${IP_GNB} &
+                sleep 10
+                (
+                ros2 launch ${ROBOT_PACKAGE_NAME_1} ${ROS_GZ_BRIDGE_NAME_1}
+                ) &
+                if [ "${EXECUTE_ROBOT_LAUNCH_FILE_1}" = "true" ]; then
+                (         
+                ros2 launch ${ROBOT_PACKAGE_NAME_1} ${ROBOT_LAUNCH_FILE_NAME_1}
+                ) &
+                fi
+                tail -f /dev/null 
 
     rcc:
         image: rcc
@@ -65,8 +57,9 @@ services:
                 source /opt/ros/humble/setup.bash
                 source /app/rviz_rcc/install/setup.bash
                 export ROS_DISCOVERY_SERVER="192.168.70.159:11811"
-                ip route add 10.60.0.0/16 via 192.168.70.135 dev eth0
-                sleep 10
+                export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds.xml
+                ip route add 10.0.0.0/24 via 192.168.70.135 dev eth0
+                sleep 20
                 ros2 launch rviz_launch rviz_launch.launch.py &
                 tail -f /dev/null 
     
@@ -86,7 +79,7 @@ services:
             - /bin/bash
             - -c
             - |
-                ip route add 10.60.0.0/24 via 192.168.70.135 dev eth0
+                ip route add 10.0.0.0/24 via 192.168.70.135 dev eth0
                 source /opt/ros/humble/setup.bash
                 fastdds discovery -i 0 -l 192.168.70.159 -p 11811 
 

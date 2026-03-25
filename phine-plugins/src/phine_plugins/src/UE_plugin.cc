@@ -73,6 +73,9 @@ void UE_plugin::Configure(const gz::sim::Entity &_entity,
     // Clone the SDF to parse plugin parameters
     auto sdfClone = _sdf->Clone();
 
+    // Get the CN type from SDF (defaults to "oai" for backward compatibility)
+    GetOptionalParamFromSDF(sdfClone, "cn_type", this->cn_type, "oai");
+
     // Retrieve all required parameters from SDF, abort if any are missing
     if (!GetParamFromSDF(sdfClone, "robot_container_name",
 			 this->robot_container_name))
@@ -137,14 +140,29 @@ void UE_plugin::Configure(const gz::sim::Entity &_entity,
 	return;
     }
 
+    if (this->cn_type == "oai") {
+	configureOAI(project_path);
+    } else if (this->cn_type == "free5gc") {
+	configureFree5gc(project_path);
+    } else if (this->cn_type == "open5gs") {
+	configureOpen5gs(project_path);
+    } else {
+	RoboSimLogger::Log(LogLevel::ERR,
+			   "Unknown cn_type: " + this->cn_type +
+			       ". Supported values: oai, free5gc, open5gs");
+	return;
+    }
+}
+
+void UE_plugin::configureOAI(const char *project_path) {
     // Define file paths using PROJECT_PATH
     std::string file_path1 =
 	std::string(project_path) + "/oai_setup/docker-compose-ue.yml";
     std::string file_path2 = std::string(project_path) + "/oai_setup/conf/ue" +
 			     this->robot_id + ".conf";
     std::string file_path3 =
-	std::string(project_path) + "/images/ue_amr/dds.xml";
-    std::string file_path4 = std::string(project_path) + "/images/ue_amr";
+	std::string(project_path) + "/images/ue_amr_oai/dds.xml";
+    std::string file_path4 = std::string(project_path) + "/images/ue_amr_oai";
 
     // Replace interface whitelist addresses in DDS XML
     replace_interface_whitelist_addresses(this->subnet_5G, file_path3,
@@ -156,7 +174,7 @@ void UE_plugin::Configure(const gz::sim::Entity &_entity,
 	" && docker build --build-arg ROBOT_PROJECT_NAME=" +
 	this->robot_project_name +
 	" --build-arg ROS_DISCOVERY_SERVER=" + this->ros_discovery_server +
-	" -t ue_amr " + file_path4;
+	" -t ue_amr_oai " + file_path4;
     system(docker_build_command.c_str());
 
     // Prepare configuration file modifications for UE
@@ -183,6 +201,104 @@ void UE_plugin::Configure(const gz::sim::Entity &_entity,
 
     // Compose and run Docker container for UE robot
     std::string folder_path = std::string(project_path) + "/oai_setup";
+    std::string docker_compose_command =
+	"cd " + folder_path + " && " + "NAME_ROBOT_" + this->robot_id + "=" +
+	this->robot_container_name + " " + "IP_GNB=" + this->ip_gNB + " " +
+	"IP_ROBOT_" + this->robot_id + "=" + this->ip_robotUE + " " +
+	"ROBOT_PACKAGE_NAME_" + this->robot_id + "=" +
+	this->robot_package_name + " " + "ROS_GZ_BRIDGE_NAME_" +
+	this->robot_id + "=" + this->ros_gz_bridge_name + " " +
+	"ROBOT_LAUNCH_FILE_NAME_" + this->robot_id + "=" +
+	this->robot_launch_file_name + " " + "EXECUTE_ROBOT_LAUNCH_FILE_" +
+	this->robot_id + "=" + this->execute_robot_launch_file + " " +
+	"ROS_DISCOVERY_SERVER=" + this->ros_discovery_server + " " +
+	"docker compose -f docker-compose-ue.yml up robot_" + this->robot_id +
+	" -d";
+    system(docker_compose_command.c_str());
+}
+
+void UE_plugin::configureFree5gc(const char *project_path) {
+    // Define file paths for free5gc setup
+    std::string file_path1 =
+	std::string(project_path) + "/free5gc_setup/docker-compose-ue.yml";
+    std::string file_path2 =
+	std::string(project_path) + "/free5gc_setup/oai/UE_config.yaml";
+    std::string file_path3 =
+	std::string(project_path) + "/images/ue_amr/dds.xml";
+    std::string file_path4 = std::string(project_path) + "/images/ue_amr";
+
+    // Replace interface whitelist addresses in DDS XML
+    replace_interface_whitelist_addresses(this->subnet_5G, file_path3,
+					  this->debug_logs);
+
+    // Build Docker image for UE robot
+    std::string docker_build_command =
+	"cp -r " + this->robot_project_path + " " + file_path4 +
+	" && docker build --build-arg ROBOT_PROJECT_NAME=" +
+	this->robot_project_name +
+	" --build-arg ROS_DISCOVERY_SERVER=" + this->ros_discovery_server +
+	" -t ue_amr " + file_path4;
+    system(docker_build_command.c_str());
+
+    // Modify UE YAML configuration file using YAML key: value format
+    modify_dockerC(file_path2, "imsi", this->imsi, this->debug_logs);
+    modify_dockerC(file_path2, "key", this->key, this->debug_logs);
+    modify_dockerC(file_path2, "opc", this->opc, this->debug_logs);
+    modify_dockerC(file_path2, "dnn", this->dnn, this->debug_logs);
+    modify_dockerC(file_path2, "nssai_sst", this->nssai_sst, this->debug_logs);
+    modify_dockerC(file_path2, "nssai_sd", this->nssai_sd, this->debug_logs);
+
+    // Compose and run Docker container for UE robot
+    std::string folder_path = std::string(project_path) + "/free5gc_setup";
+    std::string docker_compose_command =
+	"cd " + folder_path + " && " + "NAME_ROBOT_" + this->robot_id + "=" +
+	this->robot_container_name + " " + "IP_GNB=" + this->ip_gNB + " " +
+	"IP_ROBOT_" + this->robot_id + "=" + this->ip_robotUE + " " +
+	"ROBOT_PACKAGE_NAME_" + this->robot_id + "=" +
+	this->robot_package_name + " " + "ROS_GZ_BRIDGE_NAME_" +
+	this->robot_id + "=" + this->ros_gz_bridge_name + " " +
+	"ROBOT_LAUNCH_FILE_NAME_" + this->robot_id + "=" +
+	this->robot_launch_file_name + " " + "EXECUTE_ROBOT_LAUNCH_FILE_" +
+	this->robot_id + "=" + this->execute_robot_launch_file + " " +
+	"ROS_DISCOVERY_SERVER=" + this->ros_discovery_server + " " +
+	"docker compose -f docker-compose-ue.yml up robot_" + this->robot_id +
+	" -d";
+    system(docker_compose_command.c_str());
+}
+
+void UE_plugin::configureOpen5gs(const char *project_path) {
+    // Define file paths for open5gs setup
+    std::string file_path1 =
+	std::string(project_path) + "/open5gs_setup/docker-compose-ue.yml";
+    std::string file_path2 =
+	std::string(project_path) + "/open5gs_setup/oai/conf/UE_config.yaml";
+    std::string file_path3 =
+	std::string(project_path) + "/images/ue_amr/dds.xml";
+    std::string file_path4 = std::string(project_path) + "/images/ue_amr";
+
+    // Replace interface whitelist addresses in DDS XML
+    replace_interface_whitelist_addresses(this->subnet_5G, file_path3,
+					  this->debug_logs);
+
+    // Build Docker image for UE robot
+    std::string docker_build_command =
+	"cp -r " + this->robot_project_path + " " + file_path4 +
+	" && docker build --build-arg ROBOT_PROJECT_NAME=" +
+	this->robot_project_name +
+	" --build-arg ROS_DISCOVERY_SERVER=" + this->ros_discovery_server +
+	" -t ue_amr " + file_path4;
+    system(docker_build_command.c_str());
+
+    // Modify UE YAML configuration file using YAML key: value format
+    modify_dockerC(file_path2, "imsi", this->imsi, this->debug_logs);
+    modify_dockerC(file_path2, "key", this->key, this->debug_logs);
+    modify_dockerC(file_path2, "opc", this->opc, this->debug_logs);
+    modify_dockerC(file_path2, "dnn", this->dnn, this->debug_logs);
+    modify_dockerC(file_path2, "nssai_sst", this->nssai_sst, this->debug_logs);
+    modify_dockerC(file_path2, "nssai_sd", this->nssai_sd, this->debug_logs);
+
+    // Compose and run Docker container for UE robot
+    std::string folder_path = std::string(project_path) + "/open5gs_setup";
     std::string docker_compose_command =
 	"cd " + folder_path + " && " + "NAME_ROBOT_" + this->robot_id + "=" +
 	this->robot_container_name + " " + "IP_GNB=" + this->ip_gNB + " " +

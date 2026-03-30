@@ -32,9 +32,19 @@ The table of content of this README file is:
 	
 	- [UE World file declaration](#-ue-world-file-declaration)
 
-5. [Modifying the source code](#modify-gnb-source-code)
+5. [Network Monitor Plugin](#-network-monitor-plugin)
 
-6. [Upcoming features](#upcoming-features)
+	- [Why monitor the network in a ROS 2 5G simulation](#-why-monitor-the-network-in-a-ros-2-5g-simulation)
+
+	- [Plugin behavior](#-plugin-behavior)
+
+	- [Usage](#-usage)
+
+	- [Configuration parameters](#-configuration-parameters)
+
+6. [Modifying the source code](#modify-gnb-source-code)
+
+7. [Upcoming features](#upcoming-features)
 
 
 If something goes wrong in following this README file or you have any questions, you can write on our [slack chat](https://join.slack.com/t/robosimworkspace/shared_invite/zt-38i7sbsit-FpsT6d7PU241~nGz0fcUig).
@@ -760,6 +770,107 @@ To add the UE plugin to your SDF world file, include:
 ```
     
 - Be sure to follow the same network and workspace structure as the demo for compatibility.
+
+## 📊 Network Monitor Plugin
+
+The **Network Monitor** is an Ignition Gazebo GUI plugin that provides real-time measurement of **latency** and **bandwidth** over the simulated 5G link between a User Equipment (UE) container and the Data Network (DN) container. It uses `ping` for latency and `iperf3` for bandwidth, executed via `docker exec` on the respective containers.
+
+---
+
+### 🤔 Why Monitor the Network in a ROS 2 5G Simulation
+
+In any ROS 2 robotic application, the communication layer has a direct impact on system performance and safety. ROS 2 relies on DDS (Data Distribution Service) for all inter-node communication — including publishing sensor data, sending navigation goals, and exchanging control commands. When this communication happens over a **5G network** instead of a local Ethernet or Wi-Fi link, the characteristics of that network become a critical factor:
+
+- **Latency affects control loops.** ROS 2 navigation stacks (e.g., Nav2) and teleoperation nodes depend on timely delivery of odometry, laser scans, and velocity commands. A latency spike over the 5G link can cause the robot to overshoot a waypoint, react late to an obstacle, or lose localization. Knowing the real-time round-trip time helps you understand whether your control loop frequency is achievable.
+
+- **Bandwidth affects data-heavy topics.** Point clouds, camera images, and map updates are large messages. If the 5G uplink or downlink bandwidth is insufficient, DDS will drop messages or queue them, leading to stale data at the subscriber side. Monitoring bandwidth lets you verify that the 5G link can sustain the throughput your application requires.
+
+- **5G behavior is not static.** Unlike a wired connection, a 5G link is subject to variability due to radio scheduling, handovers, and shared spectrum. Having a live monitor during simulation lets you correlate network conditions with robot behavior — for example, observing that navigation failures coincide with a bandwidth drop.
+
+- **Validation before field deployment.** RoboSim5G is designed to let roboticists test their applications over a realistic 5G stack before deploying on physical hardware. The Network Monitor closes the loop: you can verify that the network performance meets the requirements of your ROS 2 application (e.g., < 50 ms RTT for teleoperation, > 10 Mbits/sec for video streaming) entirely within the simulation.
+
+In short, if you are running ROS 2 topics over a 5G network, you should monitor that network — the Network Monitor plugin gives you that visibility directly inside Gazebo.
+
+---
+
+### ⚙️ Plugin Behavior
+
+Once started, the plugin:
+
+1. Launches an **iperf3 server** in daemon mode on the UE container.
+2. Enters a continuous measurement loop that performs, in each cycle:
+   - **Downlink latency**: `ping` from the DN container to the UE IP (1 packet, 1 s timeout).
+   - **Uplink latency**: `ping` from the UE container to the DN IP (1 packet, 1 s timeout).
+   - **Downlink bandwidth**: `iperf3` from the DN client to the UE server (1 s test).
+   - **Uplink bandwidth**: `iperf3` in reverse mode (`-R` flag) (1 s test).
+3. Updates the GUI with the latest results after each cycle.
+4. When stopped, kills the iperf3 server on the UE container.
+
+Each measurement cycle takes approximately **4 seconds**, keeping the overhead low enough to avoid slowing down the simulation.
+
+---
+
+### 🚀 Usage
+
+The Network Monitor is a **GUI plugin** that can be added to your Gazebo Ignition world file or loaded at runtime from the Gazebo GUI plugin menu.
+
+#### Adding to an SDF World File
+
+Add the following block inside the `<gui>` section of your world file:
+
+```xml
+<gui>
+  <plugin name="phine_plugins::NetworkMonitor" filename="NetworkMonitor">
+    <ue_ip>10.0.0.1</ue_ip>
+    <dn_ip>192.168.70.135</dn_ip>
+    <ue_container_name>ue_turtlebot</ue_container_name>
+    <dn_container_name>oai-ext-dn</dn_container_name>
+  </plugin>
+</gui>
+```
+
+All parameters are optional — they can also be set at runtime from the GUI text fields.
+
+#### Environment Variable
+
+The UE container name can also be set via the `UE_NAME_FOR_BUTTON` environment variable:
+
+```bash
+export UE_NAME_FOR_BUTTON=ue_turtlebot
+```
+
+If set, it overrides the default value (`ue_turtlebot`). A value provided in the SDF `<ue_container_name>` element takes precedence over the environment variable.
+
+#### Runtime
+
+Once the plugin is loaded in Gazebo:
+
+1. Enter the **UE IP** (the 5G tunnel IP assigned to the UE, e.g., `10.0.0.1`) and the **DN IP** (the Data Network container IP, e.g., `192.168.70.135`).
+2. Click **Start Test** to begin continuous monitoring.
+3. The panel displays live uplink/downlink latency and bandwidth.
+4. Click **Stop Test** to end the measurement loop.
+
+---
+
+### 🔧 Configuration Parameters
+
+| **Parameter**        | **Description**                                                                 | **Default**     |
+| -------------------- | ------------------------------------------------------------------------------- | --------------- |
+| `ue_ip`              | 5G tunnel IP of the UE (e.g., `10.0.0.1`). Can be set from the GUI at runtime. | _(empty)_       |
+| `dn_ip`              | IP of the Data Network container (e.g., `192.168.70.135`). Can be set from GUI. | _(empty)_       |
+| `ue_container_name`  | Docker container name of the UE                                                 | `ue_turtlebot`  |
+| `dn_container_name`  | Docker container name of the Data Network node                                  | `oai-ext-dn`    |
+
+---
+
+### ⚠️ Prerequisites
+
+- **iperf3** must be installed inside both the UE and DN containers.
+- **ping** must be available inside both containers.
+- The Gazebo host must have **Docker access** (the plugin runs `docker exec` commands).
+- The plugin shared library (`libNetworkMonitor.so`) must be in a path listed in `IGN_GAZEBO_GUI_PLUGIN_PATH`.
+
+---
 
 ## Modify source code
 

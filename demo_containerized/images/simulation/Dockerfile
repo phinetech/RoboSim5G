@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Clean up apt cache in the same RUN instruction
     && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y net-tools iproute2 iputils-ping
+RUN apt-get update && apt-get install -y net-tools iproute2 iputils-ping iperf3
 
 RUN apt-get update && apt-get install -y \
     curl \

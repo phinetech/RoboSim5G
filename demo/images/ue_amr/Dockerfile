@@ -49,6 +49,7 @@ RUN  apt-get install -y libignition-transport8-dev
 RUN  apt-get install -y libignition-tools-dev 
 RUN  apt-get install -y ros-humble-ros-ign-bridge
 RUN  apt-get install -y iptables
+RUN  apt-get install -y iperf3 iputils-ping
 
 WORKDIR /app
 

@@ -54,6 +54,7 @@
 
 
     <plugin name="phine_plugins::UE_plugin" filename="UE_plugin">
+      <cn_type>oai</cn_type>
       <robot_container_name>ue_turtlebot</robot_container_name>
       <robot_id>1</robot_id>
       <ip_robotUE>192.168.70.150</ip_robotUE>
@@ -108,6 +109,7 @@
       <name>gNB1</name>
       <pose>-6.8 1 7 0 0 0</pose>
       <plugin name="phine_plugins::gNB_plugin" filename="gNB_plugin">
+              <cn_type>oai</cn_type>
               <link_name>phine_cell</link_name>
               <net_name>phine-net</net_name>
               <IP_GNB>192.168.70.160</IP_GNB>

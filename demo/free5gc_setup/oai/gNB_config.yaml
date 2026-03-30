@@ -1,0 +1,120 @@
+Active_gNBs:
+- gNB1
+Asn1_verbosity: none
+L1s:
+- num_cc: 1
+  prach_dtx_threshold: 200
+  tr_n_preference: local_mac
+MACRLCs:
+- num_cc: 1
+  pucch_TargetSNRx10: 200
+  pusch_TargetSNRx10: 200
+  tr_n_preference: local_RRC
+  tr_s_preference: local_L1
+RUs:
+- att_rx: 0
+  att_tx: 0
+  bands:
+  - 78
+  eNB_instances:
+  - 0
+  local_rf: 'yes'
+  max_pdschReferenceSignalPower: -27
+  max_rxgain: 75
+  nb_rx: 1
+  nb_tx: 1
+  sdr_addrs: serial=XXXXXXX
+  sf_extension: 0
+gNBs:
+- NETWORK_INTERFACES:
+    GNB_IPV4_ADDRESS_FOR_NG_AMF : 192.168.70.160
+    GNB_IPV4_ADDRESS_FOR_NGU : 192.168.71.160
+    GNB_PORT_FOR_S1U: 2152
+  SCTP:
+    SCTP_INSTREAMS: 2
+    SCTP_OUTSTREAMS: 2
+  amf_ip_address:
+  - ipv4 : 192.168.70.132
+  gNB_ID : 0x1
+  gNB_name : gNB1
+  min_rxtxtime: 6
+  nr_cellid: 16
+  plmn_list:
+  - mcc : 208
+    mnc : 93
+    mnc_length: 2
+    snssaiList:
+    - sd: 66051
+      sst: 1
+    - sd: 1122867
+      sst: 1
+  servingCellConfigCommon:
+  - absoluteFrequencySSB: 621312
+    dl_UL_TransmissionPeriodicity: 6
+    dl_absoluteFrequencyPointA: 620040
+    dl_carrierBandwidth: 106
+    dl_offstToCarrier: 0
+    dl_subcarrierSpacing: 1
+    dmrs_TypeA_Position: 0
+    hoppingId: 40
+    initialDLBWPcontrolResourceSetZero: 11
+    initialDLBWPlocationAndBandwidth: 28875
+    initialDLBWPsearchSpaceZero: 0
+    initialDLBWPsubcarrierSpacing: 1
+    initialULBWPlocationAndBandwidth: 28875
+    initialULBWPsubcarrierSpacing: 1
+    msg1_SubcarrierSpacing: 1
+    msg3_DeltaPreamble: 1
+    nrofDownlinkSlots: 7
+    nrofDownlinkSymbols: 6
+    nrofUplinkSlots: 2
+    nrofUplinkSymbols: 4
+    p0_NominalWithGrant: -90
+    p0_nominal: -90
+    pMax: 20
+    physCellId: 0
+    powerRampingStep: 1
+    prach_ConfigurationIndex: 98
+    prach_RootSequenceIndex: 1
+    prach_RootSequenceIndex_PR: 2
+    prach_msg1_FDM: 0
+    prach_msg1_FrequencyStart: 0
+    preambleReceivedTargetPower: -104
+    preambleTransMax: 6
+    pucchGroupHopping: 0
+    ra_ContentionResolutionTimer: 7
+    referenceSubcarrierSpacing: 1
+    restrictedSetConfig: 0
+    rsrp_ThresholdSSB: 19
+    ssPBCH_BlockPower: -25
+    ssb_PositionsInBurst_Bitmap: 1
+    ssb_perRACH_OccasionAndCB_PreamblesPerSSB: 15
+    ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR: 4
+    ssb_periodicityServingCell: 2
+    subcarrierSpacing: 1
+    ul_carrierBandwidth: 106
+    ul_frequencyBand: 78
+    ul_offstToCarrier: 0
+    ul_subcarrierSpacing: 1
+    zeroCorrelationZoneConfig: 12
+  tracking_area_code: 1
+log_config:
+  f1ap_log_level: debug
+  global_log_level: info
+  hw_log_level: info
+  mac_log_level: info
+  ngap_log_level: debug
+  pdcp_log_level: info
+  phy_log_level: info
+  rlc_log_level: info
+  rrc_log_level: info
+rfsimulator:
+  serveraddr: server
+security:
+  ciphering_algorithms:
+  - nea0
+  drb_ciphering: 'yes'
+  drb_integrity: 'no'
+  integrity_algorithms:
+  - nia2
+  - nia0

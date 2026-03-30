@@ -130,11 +130,12 @@ void modify_dockerC(const std::string &file_path, const std::string &key,
 	    }
 
 	    std::smatch match;
-	    // Capture leading whitespace for proper formatting
-	    if (std::regex_search(line, match, std::regex(R"(^\s*)"))) {
-		std::string indentation = match.str(0);
-		// Replace the key's value with the new value
-		line = indentation + key + " : " + new_value;
+	    // Capture leading whitespace and optional YAML list marker (- )
+	    if (std::regex_search(line, match,
+				  std::regex(R"(^(\s*)(-\s*)?)"))) {
+		std::string prefix = match.str(0);
+		// Replace the key's value with the new value, preserving prefix
+		line = prefix + key + " : " + new_value;
 	    }
 	}
 
@@ -545,4 +546,144 @@ void replace_interface_whitelist_addresses(const std::string &subnet,
     RoboSimLogger::Log(
 	LogLevel::DEBUG,
 	"Successfully updated <interfaceWhiteList> with subnet: " + subnet);
+}
+
+bool GetOptionalParamFromSDF(sdf::ElementPtr sdfClone,
+			     const std::string &paramName,
+			     std::string &paramValue,
+			     const std::string &defaultValue) {
+    if (sdfClone->HasElement(paramName)) {
+	auto sdfElem = sdfClone->GetElement(paramName);
+	if (sdfElem) {
+	    paramValue = sdfElem->Get<std::string>();
+	}
+    }
+
+    if (paramValue.empty()) {
+	paramValue = defaultValue;
+	RoboSimLogger::Log(LogLevel::INFO,
+			   paramName +
+			       " not set, using default: " + defaultValue);
+	return false;
+    }
+
+    RoboSimLogger::Log(LogLevel::INFO, paramName + " is: " + paramValue);
+    return true;
+}
+
+void modify_dockerC_nth(const std::string &file_path, const std::string &key,
+			const std::string &new_value, int occurrence,
+			bool debug) {
+    std::ifstream file_in(file_path);
+    if (!file_in) {
+	RoboSimLogger::Log(LogLevel::ERR,
+			   "Error opening file for reading: " + file_path);
+	return;
+    }
+
+    std::stringstream modified_content;
+    std::string line;
+    int match_count = 0;
+
+    std::string regex_pattern = R"(\b)" + key + R"(\b\s*:\s*\S+)";
+
+    while (std::getline(file_in, line)) {
+	std::regex pattern(regex_pattern);
+
+	if (std::regex_search(line, pattern)) {
+	    match_count++;
+	    if (match_count == occurrence) {
+		if (debug) {
+		    RoboSimLogger::Log(LogLevel::DEBUG,
+				       "Matched Line (occurrence " +
+					   std::to_string(occurrence) +
+					   "): " + line);
+		}
+
+		std::smatch match;
+		if (std::regex_search(line, match, std::regex(R"(^\s*)"))) {
+		    std::string indentation = match.str(0);
+		    line = indentation + key + " : " + new_value;
+		}
+	    }
+	}
+
+	modified_content << line << "\n";
+    }
+
+    file_in.close();
+
+    std::ofstream file_out(file_path, std::ios::trunc);
+    if (!file_out) {
+	RoboSimLogger::Log(LogLevel::ERR,
+			   "Error opening file for writing: " + file_path);
+	return;
+    }
+
+    file_out << modified_content.str();
+    file_out.close();
+
+    if (debug) {
+	RoboSimLogger::Log(LogLevel::DEBUG, "File modified successfully.");
+    }
+}
+
+void modify_yaml_list_entry(const std::string &file_path,
+			    const std::string &parent_key,
+			    const std::string &new_value, bool debug) {
+    std::ifstream file_in(file_path);
+    if (!file_in) {
+	RoboSimLogger::Log(LogLevel::ERR,
+			   "Error opening file for reading: " + file_path);
+	return;
+    }
+
+    std::stringstream modified_content;
+    std::string line;
+    bool found_parent = false;
+
+    std::string parent_pattern_str = R"(\b)" + parent_key + R"(\b\s*:\s*$)";
+    std::regex parent_pattern(parent_pattern_str);
+    std::regex list_item_pattern(R"(^(\s*)-\s*.+)");
+
+    while (std::getline(file_in, line)) {
+	if (found_parent) {
+	    std::smatch match;
+	    if (std::regex_search(line, match, list_item_pattern)) {
+		if (debug) {
+		    RoboSimLogger::Log(LogLevel::DEBUG,
+				       "Replacing list item: " + line);
+		}
+		std::string indentation = match.str(1);
+		line = indentation + "- " + new_value;
+		found_parent = false;
+	    }
+	}
+
+	if (std::regex_search(line, parent_pattern)) {
+	    found_parent = true;
+	    if (debug) {
+		RoboSimLogger::Log(LogLevel::DEBUG,
+				   "Found parent key: " + line);
+	    }
+	}
+
+	modified_content << line << "\n";
+    }
+
+    file_in.close();
+
+    std::ofstream file_out(file_path, std::ios::trunc);
+    if (!file_out) {
+	RoboSimLogger::Log(LogLevel::ERR,
+			   "Error opening file for writing: " + file_path);
+	return;
+    }
+
+    file_out << modified_content.str();
+    file_out.close();
+
+    if (debug) {
+	RoboSimLogger::Log(LogLevel::DEBUG, "File modified successfully.");
+    }
 }

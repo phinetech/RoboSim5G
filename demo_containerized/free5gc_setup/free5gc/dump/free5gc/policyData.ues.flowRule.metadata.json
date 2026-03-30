@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"58f0ce1843d1437f9e20ed5d69a0ae8d","collectionName":"policyData.ues.flowRule","type":"collection"}

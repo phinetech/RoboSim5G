@@ -1,0 +1,50 @@
+services:
+    robot_1:
+        image: ue_amr
+        privileged: true
+        container_name: ${NAME_ROBOT_1}
+        environment:
+            USE_ADDITIONAL_OPTIONS: -E --rfsim -r 106 --numerology 1 -C 3319680000 --rfsimulator.serveraddr ${IP_GNB} --log_config.global_log_options level,nocolor,time
+            ROS_DOMAIN_ID: ${ROS_DOMAIN_ID}
+            IGN_PARTITION: ${IGN_PARTITION}
+        networks:
+            public_net:
+                ipv4_address: ${IP_ROBOT_1}
+            ros_gz_net:
+                ipv4_address: 192.168.73.150
+        volumes:
+            - ${DEMO_PROJECT_PATH}/open5gs_setup/oai/conf/UE_config.yaml:/opt/oai-nr-ue/etc/nr-ue.yaml
+        entrypoint:
+            - /bin/bash
+            - -c
+            - |
+                source /opt/ros/humble/setup.bash
+                source /app/robot_logic/install/setup.bash
+                export ROS_DISCOVERY_SERVER="${ROS_DISCOVERY_SERVER}"
+                export IGN_IP=192.168.73.150
+                export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds.xml
+                /opt/oai-nr-ue/bin/nr-uesoftmodem -O /opt/oai-nr-ue/etc/nr-ue.yaml -E --rfsim -r 106 --numerology 1 -C 3319680000 --rfsimulator.serveraddr ${IP_GNB} &
+                sleep 10
+                (
+                ros2 launch ${ROBOT_PACKAGE_NAME_1} ${ROS_GZ_BRIDGE_NAME_1}
+                ) &
+                if [ "${EXECUTE_ROBOT_LAUNCH_FILE_1}" = "true" ]; then
+                (         
+                ros2 launch ${ROBOT_PACKAGE_NAME_1} ${ROBOT_LAUNCH_FILE_NAME_1}
+                ) &
+                fi
+                tail -f /dev/null 
+
+        healthcheck:
+            test: /bin/bash -c "pgrep nr-uesoftmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+           
+networks:
+    public_net:
+        external: true
+        name: phine-net
+    ros_gz_net:
+        external:
+            name: ros_gz_net

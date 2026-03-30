@@ -1,0 +1,29 @@
+services:
+    gNB:
+        image: oaisoftwarealliance/oai-gnb:2026.w04
+        privileged: true
+        container_name: oai-gNB1
+        environment:
+            USE_ADDITIONAL_OPTIONS: -E --rfsim --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
+        volumes:
+            - ${DEMO_PROJECT_PATH}/open5gs_setup/oai/conf/gNB_config.yaml:/opt/oai-gnb/etc/gnb.yaml
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.160
+        healthcheck:
+            test: /bin/bash -c "pgrep nr-softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        entrypoint:
+            - /bin/bash
+            - -c
+            - |
+                /opt/oai-gnb/bin/nr-softmodem -O /opt/oai-gnb/etc/gnb.yaml -E --rfsim --log_config.global_log_options level,nocolor,time &
+                tail -f /dev/null
+
+networks:
+    public_net:
+        external: true
+        name: phine-net

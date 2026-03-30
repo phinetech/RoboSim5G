@@ -266,7 +266,7 @@ void NetworkMonitor::startTest() {
 	while (this->is_running.load()) {
 	    // Downlink latency: ping from DN to UE (through 5G)
 	    std::string ping_dl = "docker exec " + dn_name +
-				  " ping -c 3 -W 2 " + ue_ip_str + " 2>&1";
+				  " ping -c 1 -W 1 " + ue_ip_str + " 2>&1";
 	    std::string dl_lat = parsePingOutput(executeCommand(ping_dl));
 
 	    if (!this->is_running.load()) {
@@ -275,7 +275,7 @@ void NetworkMonitor::startTest() {
 
 	    // Uplink latency: ping from UE to DN
 	    std::string ping_ul = "docker exec " + ue_name +
-				  " ping -c 3 -W 2 " + dn_ip_str + " 2>&1";
+				  " ping -c 1 -W 1 " + dn_ip_str + " 2>&1";
 	    std::string ul_lat = parsePingOutput(executeCommand(ping_ul));
 
 	    if (!this->is_running.load()) {
@@ -284,7 +284,7 @@ void NetworkMonitor::startTest() {
 
 	    // Downlink bandwidth: DN client sends to UE server
 	    std::string iperf_dl = "docker exec " + dn_name + " iperf3 -c " +
-				   ue_ip_str + " -t 2 -f m 2>&1";
+				   ue_ip_str + " -t 1 -f m 2>&1";
 	    std::string dl_bw = parseIperfOutput(executeCommand(iperf_dl));
 
 	    if (!this->is_running.load()) {
@@ -294,7 +294,7 @@ void NetworkMonitor::startTest() {
 	    // Uplink bandwidth: reverse mode (UE sends to DN via
 	    // DN client with -R flag)
 	    std::string iperf_ul = "docker exec " + dn_name + " iperf3 -c " +
-				   ue_ip_str + " -t 2 -R -f m 2>&1";
+				   ue_ip_str + " -t 1 -R -f m 2>&1";
 	    std::string ul_bw = parseIperfOutput(executeCommand(iperf_ul));
 
 	    // Update GUI properties from the main Qt thread

@@ -58,3 +58,7 @@ demo/images/ue_amr/nav_stack
 /dataSources.local.xml
 
 .DS_Store
+demo/open5gs_setup/db_data/*
+demo/open5gs_setup/db_config/*
+demo_containerized/open5gs_setup/db_data/*
+demo_containerized/open5gs_setup/db_config/*

@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/gNBPowerPlugin">
+        <file>gNBPowerPlugin.qml</file>
+    </qresource>
+</RCC>

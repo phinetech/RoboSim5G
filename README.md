@@ -42,9 +42,17 @@ The table of content of this README file is:
 
 	- [Configuration parameters](#-configuration-parameters)
 
-6. [Modifying the source code](#modify-gnb-source-code)
+6. [gNB Power and UE Power Control Plugins](#-gnb-power-and-ue-power-control-plugins)
 
-7. [Upcoming features](#upcoming-features)
+	- [What they do](#-what-they-do)
+
+	- [How they work](#-how-they-work)
+
+	- [Usage](#-usage-1)
+
+	- [Configuration parameters](#-configuration-parameters-1)
+
+7. [Modifying the source code](#modify-gnb-source-code)
 
 
 If something goes wrong in following this README file or you have any questions, you can write on our [slack chat](https://join.slack.com/t/robosimworkspace/shared_invite/zt-38i7sbsit-FpsT6d7PU241~nGz0fcUig).
@@ -869,6 +877,185 @@ Once the plugin is loaded in Gazebo:
 - **ping** must be available inside both containers.
 - The Gazebo host must have **Docker access** (the plugin runs `docker exec` commands).
 - The plugin shared library (`libNetworkMonitor.so`) must be in a path listed in `IGN_GAZEBO_GUI_PLUGIN_PATH`.
+
+---
+
+## 🔌 gNB Power and UE Power Control Plugins
+
+The **gNB Power Plugin** and **UE Power Plugin** are Ignition Gazebo GUI plugins that provide **runtime control** over the 5G radio processes (gNB and UE softmodems) running inside Docker containers. These plugins allow you to **start, stop, and monitor** the OAI radio software directly from the Gazebo GUI without needing to manually execute Docker commands.
+
+---
+
+### 🎯 What They Do
+
+Both plugins provide a graphical interface to:
+
+- 🟢 **Start/Stop** the radio process (`nr-softmodem` for gNB, `nr-uesoftmodem` for UE) inside the container
+- 🔄 **Toggle between OAI versions** (v24 and v26) which use different configuration file formats
+- 📊 **Monitor process state** (running/stopped) with visual indicators
+- 🔧 **Configure runtime parameters** like container names, IP addresses, and OAI version
+
+This is particularly useful during simulation development and testing, where you may need to:
+- Verify 5G connectivity by restarting the UE or gNB
+- Test failure scenarios by stopping the radio link
+- Switch between OAI versions without rebuilding containers
+- Observe how your robot application handles connection loss
+
+---
+
+### ⚡ How They Work
+
+#### gNB Power Plugin
+
+1. **First Click** (Connect): Checks if the `nr-softmodem` process is running in the specified gNB container
+2. **Subsequent Clicks** (Toggle): Starts or stops the gNB radio process using the appropriate command for the selected version:
+   - **v24**: Launches with `.conf` configuration file and `--sa` flag
+   - **v26**: Launches with `.yaml` configuration file (no `--sa` flag)
+
+#### UE Power Plugin
+
+Works similarly to the gNB plugin, but controls the `nr-uesoftmodem` process in the UE container:
+- **v24**: Uses `.conf` file with frequency `3619200000` Hz
+- **v26**: Uses `.yaml` file with frequency `3319680000` Hz
+- Requires the **gNB IP address** to establish the RF simulator connection
+
+---
+
+### 🚀 Usage
+
+Both plugins are **GUI plugins** that can be added to your Gazebo Ignition world file or loaded at runtime from the Gazebo GUI plugin menu.
+
+#### Adding to an SDF World File
+
+Add the following blocks inside the `<gui>` section of your world file:
+
+##### gNB Power Plugin
+
+```xml
+<gui>
+  <plugin name="phine_plugins::gNBPowerPlugin" filename="gNBPowerPlugin">
+    <container_name>oai-gNB1</container_name>
+    <version>v24</version>
+  </plugin>
+</gui>
+```
+
+##### UE Power Plugin
+
+```xml
+<gui>
+  <plugin name="phine_plugins::UePowerPlugin" filename="UePowerPlugin">
+    <container_name>ue_turtlebot</container_name>
+    <version>v24</version>
+    <gnb_ip>192.168.70.160</gnb_ip>
+  </plugin>
+</gui>
+```
+
+All parameters are optional and can be configured at runtime from the GUI.
+
+#### Environment Variable for UE Plugin
+
+The UE container name can be set via the `UE_NAME_FOR_BUTTON` environment variable:
+
+```bash
+export UE_NAME_FOR_BUTTON=ue_turtlebot
+```
+
+If set, this overrides the default value. A value provided in the SDF `<container_name>` element takes precedence.
+
+---
+
+### 🖥️ GUI Interface
+
+#### gNB Power Control Panel
+
+When loaded, the plugin displays:
+- **Container Name Field**: Name of the gNB Docker container (e.g., `oai-gNB1`)
+- **Version Selector**: Dropdown to choose between "v24 (.conf)" and "v26 (.yaml)"
+- **Power Button**: 
+  - First click: **Connect** to the container and check process status
+  - Subsequent clicks: **Toggle** the gNB process on/off
+  - Color indicators: 🟢 Green (running) / 🔴 Red (stopped)
+- **Status Display**: Shows current connection and process state
+
+#### UE Power Control Panel
+
+Similar to gNB, with an additional field:
+- **Container Name Field**: Name of the UE Docker container (e.g., `ue_turtlebot`)
+- **Version Selector**: Choose between v24 and v26
+- **gNB IP Field**: IP address of the gNB for RF simulator connection (e.g., `192.168.70.160`)
+- **Power Button**: Connect and toggle the UE process
+- **Status Display**: Connection and process state
+
+**Note**: Container name, version, and gNB IP can only be changed **before** the first connection. Once connected, these fields are locked to prevent accidental misconfiguration during active radio sessions.
+
+---
+
+### 🔧 Configuration Parameters
+
+#### gNB Power Plugin Parameters
+
+| **Parameter**    | **Description**                                           | **Default**   |
+| ---------------- | --------------------------------------------------------- | ------------- |
+| `container_name` | Docker container name of the gNB                          | `oai-gNB1`    |
+| `version`        | OAI version: `v24` (uses .conf) or `v26` (uses .yaml)     | `v24`         |
+
+#### UE Power Plugin Parameters
+
+| **Parameter**    | **Description**                                           | **Default**       |
+| ---------------- | --------------------------------------------------------- | ----------------- |
+| `container_name` | Docker container name of the UE                           | `ue_turtlebot`    |
+| `version`        | OAI version: `v24` (uses .conf) or `v26` (uses .yaml)     | `v24`             |
+| `gnb_ip`         | IP address of the gNB container for RF simulator          | `192.168.70.160`  |
+
+---
+
+### ✅ Tested Configurations
+
+These plugins have been **tested and verified** with:
+- **OAI 5G Core Network** (`oai_setup`)
+- **demo** mode (Gazebo on host)
+- **demo_containerized** mode (Gazebo in Docker)
+
+Support for **free5GC** and **Open5GS** core networks is planned for future releases.
+
+---
+
+### 💡 Typical Workflow
+
+1. **Launch your OAI 5G core network**:
+   ```bash
+   cd path/demo/oai_setup
+   docker compose up -d
+   ```
+
+2. **Launch gNB and UE containers** (without starting the radio processes):
+   ```bash
+   docker compose -f docker-compose-gNB.yml up -d
+   docker compose -f docker-compose-ue.yml up -d
+   ```
+
+3. **Start Gazebo** with your world file that includes the power plugins
+
+4. **In Gazebo GUI**:
+   - Open the **gNB Power Control** panel
+   - Verify container name and version
+   - Click **Connect** to check status
+   - Click **Power Toggle** to start the gNB radio
+
+5. **Then control the UE**:
+   - Open the **UE Power Control** panel
+   - Verify container name, version, and gNB IP
+   - Click **Connect** to check status
+   - Click **Power Toggle** to start the UE and establish the 5G connection
+
+6. **Monitor AMF logs** to verify successful registration:
+   ```bash
+   docker logs oai-amf
+   ```
+
+You should see the UE appear in the AMF's registered UEs table.
 
 ---
 

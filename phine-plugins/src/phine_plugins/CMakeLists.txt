@@ -65,9 +65,51 @@ target_link_libraries(NetworkMonitor
   Qt5::Quick
 )
 
+# ---- gNBPowerPlugin GUI Plugin ----
+qt5_add_resources(GNB_POWER_QRC src/gNBPowerPlugin.qrc)
+
+add_library(gNBPowerPlugin SHARED
+  src/gNBPowerPlugin.cc
+  ${GNB_POWER_QRC}
+)
+set_property(TARGET gNBPowerPlugin PROPERTY CXX_STANDARD 17)
+set_target_properties(gNBPowerPlugin PROPERTIES AUTOMOC ON)
+
+target_include_directories(gNBPowerPlugin PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_link_libraries(gNBPowerPlugin
+  ignition-gui${IGN_GUI_VER}::ignition-gui${IGN_GUI_VER}
+  ignition-plugin${IGN_PLUGIN_VER}::register
+  Qt5::Core
+  Qt5::Quick
+)
+
+# ---- UePowerPlugin GUI Plugin ----
+qt5_add_resources(UE_POWER_QRC src/UePowerPlugin.qrc)
+
+add_library(UePowerPlugin SHARED
+  src/UePowerPlugin.cc
+  ${UE_POWER_QRC}
+)
+set_property(TARGET UePowerPlugin PROPERTY CXX_STANDARD 17)
+set_target_properties(UePowerPlugin PROPERTIES AUTOMOC ON)
+
+target_include_directories(UePowerPlugin PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_link_libraries(UePowerPlugin
+  ignition-gui${IGN_GUI_VER}::ignition-gui${IGN_GUI_VER}
+  ignition-plugin${IGN_PLUGIN_VER}::register
+  Qt5::Core
+  Qt5::Quick
+)
+
 # Install the plugins
 install(TARGETS
-UE_plugin gNB_plugin NetworkMonitor
+UE_plugin gNB_plugin NetworkMonitor gNBPowerPlugin UePowerPlugin
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

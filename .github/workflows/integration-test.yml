@@ -1,0 +1,120 @@
+name: Integration Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc
+          sudo apt-get clean
+          df -h
+
+      - name: Build UE and gNB plugins
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            osrf/ros:humble-desktop \
+            /bin/bash -c '
+              set -e
+              apt-get update && apt-get install -y \
+                python3-colcon-common-extensions \
+                wget lsb-release gnupg2
+
+              # Add Gazebo Ignition key and repo (Fortress)
+              echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" \
+                > /etc/apt/sources.list.d/gazebo-stable.list
+              wget https://packages.osrfoundation.org/gazebo.key -O - | apt-key add -
+              apt-get update && apt-get install -y ignition-fortress
+
+              cd /workspace/phine-plugins
+              source /opt/ros/humble/setup.bash
+              colcon build --event-handlers console_direct+
+
+              # Verify plugins were built
+              ls -la /workspace/phine-plugins/install/phine_plugins/lib/phine_plugins/
+            '
+
+      - name: Copy built plugins to simulation image
+        run: |
+          PLUGIN_SRC=phine-plugins/install/phine_plugins/lib/phine_plugins
+          PLUGIN_DST=demo_containerized/images/simulation/gazebo_launch/src/ign_turtlebot/phine_plugins
+
+          cp "${PLUGIN_SRC}/libgNB_plugin.so" "${PLUGIN_DST}/libgNB_plugin.so"
+          cp "${PLUGIN_SRC}/libUE_plugin.so"  "${PLUGIN_DST}/libUE_plugin.so"
+
+          echo "Plugins copied:"
+          ls -la "${PLUGIN_DST}/"
+
+      - name: Build simulation Docker image
+        run: |
+          cd demo_containerized/images/simulation
+          docker build -t simulation:test .
+
+      - name: Start OAI Core Network
+        run: |
+          cd demo_containerized/oai_setup
+          docker compose up -d
+          ./wait_for_core_network.sh
+
+      - name: Create ros_gz_net network
+        run: |
+          docker network create \
+            --driver bridge \
+            --subnet=192.168.73.128/26 \
+            --opt com.docker.network.bridge.name="ros_gz_net" \
+            ros_gz_net
+
+      - name: Start simulation container (headless)
+        run: |
+          cd tests/integration
+          DEMO_PROJECT_PATH="${{ github.workspace }}/demo_containerized" \
+            docker compose -f docker-compose-test-simulation.yml up -d
+
+      - name: Check gNB and UE registration
+        run: |
+          chmod +x tests/integration/check_registration.sh
+          tests/integration/check_registration.sh 900
+
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          echo "=== AMF logs ==="
+          docker logs oai-amf 2>&1 | tail -100 || true
+          echo ""
+          echo "=== Simulation container logs ==="
+          docker logs simulation 2>&1 | tail -100 || true
+          echo ""
+          echo "=== gNB container logs ==="
+          docker logs oai-gNB1 2>&1 | tail -50 || true
+          echo ""
+          echo "=== UE container logs ==="
+          docker logs ue_turtlebot 2>&1 | tail -50 || true
+          echo ""
+          echo "=== All running containers ==="
+          docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Image}}" || true
+          echo ""
+          echo "=== Docker networks ==="
+          docker network ls || true
+
+      - name: Cleanup
+        if: always()
+        run: |
+          cd tests/integration
+          docker compose -f docker-compose-test-simulation.yml down || true
+          docker stop ue_turtlebot oai-gNB1 2>/dev/null || true
+          docker rm ue_turtlebot oai-gNB1 2>/dev/null || true
+          cd "${{ github.workspace }}/demo_containerized/oai_setup"
+          docker compose down || true
+          docker network rm ros_gz_net 2>/dev/null || true

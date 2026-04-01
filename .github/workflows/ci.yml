@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ feat/ci_test_plugins_amf, main ]
+    branches: [ main ]
 
   pull_request:
     branches: [ main ]

@@ -26,14 +26,14 @@ jobs:
           docker run --rm \
             -v "${{ github.workspace }}:/workspace" \
             osrf/ros:humble-desktop \
-            /bin/bash -c "
+            /bin/bash -c '
               set -e
               apt-get update && apt-get install -y \
                 python3-colcon-common-extensions \
                 wget lsb-release gnupg2
 
               # Add Gazebo Ignition key and repo (Fortress)
-              echo 'deb http://packages.osrfoundation.org/gazebo/ubuntu-stable \$(lsb_release -cs) main' \
+              echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" \
                 > /etc/apt/sources.list.d/gazebo-stable.list
               wget https://packages.osrfoundation.org/gazebo.key -O - | apt-key add -
               apt-get update && apt-get install -y ignition-fortress
@@ -44,7 +44,7 @@ jobs:
 
               # Verify plugins were built
               ls -la /workspace/phine-plugins/install/phine_plugins/lib/phine_plugins/
-            "
+            '
 
       - name: Copy built plugins to simulation image
         run: |

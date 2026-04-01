@@ -1,0 +1,44 @@
+version: '3.8'
+services:
+    simulation:
+        image: simulation:test
+        privileged: true
+        container_name: simulation
+        environment:
+            - PROJECT_PATH=/app
+            - DEMO_PROJECT_PATH=${DEMO_PROJECT_PATH}
+            - ROS_DISCOVERY_SERVER=192.168.70.159:11811
+            - IGN_IP=192.168.73.151
+            - ROS_DOMAIN_ID=10
+            - IGN_PARTITION=domain1
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+        stdin_open: true
+        tty: true
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.152
+            ros_gz_net:
+                ipv4_address: 192.168.73.151
+        entrypoint:
+            - /bin/bash
+            - -c
+            - |
+                source /opt/ros/humble/setup.bash
+                source /app/gazebo_launch/install/setup.bash
+                export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds.xml
+                PACKAGE_PATH=$$(ros2 pkg prefix ign_turtlebot --share)
+                export IGN_GAZEBO_RESOURCE_PATH=$${PACKAGE_PATH}/models:/opt/ros/humble/share
+                export IGN_GAZEBO_SYSTEM_PLUGIN_PATH=$${PACKAGE_PATH}/phine_plugins:/usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins:/opt/ros/humble/lib
+                export IGN_GUI_PLUGIN_PATH=$${PACKAGE_PATH}/gui_plugins
+                ip route add 10.0.0.0/16 via 192.168.70.134 dev eth0 || true
+                echo "Starting Gazebo in headless (server-only) mode..."
+                ign gazebo -s -r -v 3 $${PACKAGE_PATH}/worlds/world_only.sdf &
+                tail -f /dev/null
+networks:
+    public_net:
+        external:
+            name: phine-net
+    ros_gz_net:
+        external:
+            name: ros_gz_net

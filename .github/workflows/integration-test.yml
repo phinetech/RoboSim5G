@@ -2,7 +2,7 @@ name: Integration Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [ feat/ci_test_plugins_amf, main ]
   pull_request:
     branches: [ main ]
 

@@ -56,39 +56,6 @@ Rectangle {
             }
         }
 
-        // Version Selector
-        RowLayout {
-            spacing: 8
-            Label {
-                text: "Version:"
-                color: "#cccccc"
-                font.pixelSize: 13
-                Layout.preferredWidth: 80
-            }
-            ComboBox {
-                id: versionCombo
-                model: ["v24 (.conf)", "v26 (.yaml)"]
-                currentIndex: gNBPowerPlugin.versionIndex
-                onCurrentIndexChanged: gNBPowerPlugin.versionIndex = currentIndex
-                enabled: !gNBPowerPlugin.connected
-                Layout.fillWidth: true
-                font.pixelSize: 13
-
-                background: Rectangle {
-                    color: versionCombo.enabled ? "#3c3c3c" : "#2a2a2a"
-                    border.color: "#666666"
-                    radius: 3
-                }
-                contentItem: Text {
-                    text: versionCombo.displayText
-                    color: "#ffffff"
-                    font: versionCombo.font
-                    verticalAlignment: Text.AlignVCenter
-                    leftPadding: 8
-                }
-            }
-        }
-
         Rectangle {
             Layout.fillWidth: true
             height: 1

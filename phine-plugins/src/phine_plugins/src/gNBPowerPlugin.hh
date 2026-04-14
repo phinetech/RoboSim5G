@@ -26,8 +26,6 @@ class gNBPowerPlugin : public ignition::gui::Plugin {
 
     Q_PROPERTY(QString containerName READ getContainerName WRITE
 		   setContainerName NOTIFY containerNameChanged)
-    Q_PROPERTY(int versionIndex READ getVersionIndex WRITE setVersionIndex
-		   NOTIFY versionIndexChanged)
     Q_PROPERTY(
 	bool processRunning READ isProcessRunning NOTIFY processRunningChanged)
     Q_PROPERTY(bool connected READ isConnected NOTIFY connectedChanged)
@@ -39,8 +37,6 @@ class gNBPowerPlugin : public ignition::gui::Plugin {
 
     QString getContainerName() const;
     void setContainerName(const QString &name);
-    int getVersionIndex() const;
-    void setVersionIndex(int index);
     bool isProcessRunning() const;
     bool isConnected() const;
 
@@ -49,7 +45,6 @@ class gNBPowerPlugin : public ignition::gui::Plugin {
 
   signals:
     void containerNameChanged();
-    void versionIndexChanged();
     void processRunningChanged();
     void connectedChanged();
 
@@ -59,7 +54,6 @@ class gNBPowerPlugin : public ignition::gui::Plugin {
     static bool isValidContainerName(const std::string &name);
 
     QString container_name{"oai-gNB1"};
-    int version_index{0}; // 0 = v24, 1 = v26
     bool process_running{false};
     bool connected{false};
 };

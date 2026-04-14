@@ -26,8 +26,6 @@ class UePowerPlugin : public ignition::gui::Plugin {
 
     Q_PROPERTY(QString containerName READ getContainerName WRITE
 		   setContainerName NOTIFY containerNameChanged)
-    Q_PROPERTY(int versionIndex READ getVersionIndex WRITE setVersionIndex
-		   NOTIFY versionIndexChanged)
     Q_PROPERTY(QString gnbIp READ getGnbIp WRITE setGnbIp NOTIFY gnbIpChanged)
     Q_PROPERTY(
 	bool processRunning READ isProcessRunning NOTIFY processRunningChanged)
@@ -40,8 +38,6 @@ class UePowerPlugin : public ignition::gui::Plugin {
 
     QString getContainerName() const;
     void setContainerName(const QString &name);
-    int getVersionIndex() const;
-    void setVersionIndex(int index);
     QString getGnbIp() const;
     void setGnbIp(const QString &ip);
     bool isProcessRunning() const;
@@ -52,7 +48,6 @@ class UePowerPlugin : public ignition::gui::Plugin {
 
   signals:
     void containerNameChanged();
-    void versionIndexChanged();
     void gnbIpChanged();
     void processRunningChanged();
     void connectedChanged();
@@ -64,7 +59,6 @@ class UePowerPlugin : public ignition::gui::Plugin {
     static bool isValidIpAddress(const std::string &ip);
 
     QString container_name{"ue_turtlebot"};
-    int version_index{0}; // 0 = v24, 1 = v26
     QString gnb_ip{"192.168.70.160"};
     bool process_running{false};
     bool connected{false};

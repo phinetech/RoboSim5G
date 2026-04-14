@@ -48,16 +48,6 @@ void UePowerPlugin::LoadConfig(const tinyxml2::XMLElement *_pluginElem) {
 	    container_name = QString::fromStdString(name_elem->GetText());
 	}
 
-	auto *ver_elem = _pluginElem->FirstChildElement("version");
-	if (ver_elem != nullptr && ver_elem->GetText() != nullptr) {
-	    std::string ver = ver_elem->GetText();
-	    if (ver == "v24") {
-		version_index = 0;
-	    } else if (ver == "v26") {
-		version_index = 1;
-	    }
-	}
-
 	auto *ip_elem = _pluginElem->FirstChildElement("gnb_ip");
 	if (ip_elem != nullptr && ip_elem->GetText() != nullptr) {
 	    gnb_ip = QString::fromStdString(ip_elem->GetText());
@@ -71,15 +61,6 @@ void UePowerPlugin::setContainerName(const QString &name) {
     if (container_name != name) {
 	container_name = name;
 	emit containerNameChanged();
-    }
-}
-
-int UePowerPlugin::getVersionIndex() const { return version_index; }
-
-void UePowerPlugin::setVersionIndex(int index) {
-    if (version_index != index) {
-	version_index = index;
-	emit versionIndexChanged();
     }
 }
 
@@ -135,18 +116,6 @@ std::string UePowerPlugin::buildStartCommand() const {
     std::string name = container_name.toStdString();
     std::string ip = gnb_ip.toStdString();
 
-    if (version_index == 0) {
-	// v24: uses .conf file with --sa flag, freq 3619200000
-	return "docker exec " + name +
-	       " /bin/bash -c"
-	       " '/opt/oai-nr-ue/bin/nr-uesoftmodem"
-	       " -O /opt/oai-nr-ue/etc/nr-ue.conf"
-	       " -E --sa --rfsim -r 106 --numerology 1"
-	       " -C 3619200000"
-	       " --rfsimulator.serveraddr " +
-	       ip + " --log_config.global_log_options level,nocolor,time &'";
-    }
-    // v26: uses .yaml file without --sa flag, freq 3319680000
     return "docker exec " + name +
 	   " /bin/bash -c"
 	   " '/opt/oai-nr-ue/bin/nr-uesoftmodem"

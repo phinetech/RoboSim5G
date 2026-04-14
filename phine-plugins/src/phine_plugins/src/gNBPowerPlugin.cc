@@ -40,15 +40,6 @@ void gNBPowerPlugin::LoadConfig(const tinyxml2::XMLElement *_pluginElem) {
 	    container_name = QString::fromStdString(name_elem->GetText());
 	}
 
-	auto *ver_elem = _pluginElem->FirstChildElement("version");
-	if (ver_elem != nullptr && ver_elem->GetText() != nullptr) {
-	    std::string ver = ver_elem->GetText();
-	    if (ver == "v24") {
-		version_index = 0;
-	    } else if (ver == "v26") {
-		version_index = 1;
-	    }
-	}
     }
 }
 
@@ -58,15 +49,6 @@ void gNBPowerPlugin::setContainerName(const QString &name) {
     if (container_name != name) {
 	container_name = name;
 	emit containerNameChanged();
-    }
-}
-
-int gNBPowerPlugin::getVersionIndex() const { return version_index; }
-
-void gNBPowerPlugin::setVersionIndex(int index) {
-    if (version_index != index) {
-	version_index = index;
-	emit versionIndexChanged();
     }
 }
 
@@ -95,16 +77,6 @@ bool gNBPowerPlugin::checkProcessRunning() {
 
 std::string gNBPowerPlugin::buildStartCommand() const {
     std::string name = container_name.toStdString();
-    if (version_index == 0) {
-	// v24: uses .conf file with --sa flag
-	return "docker exec " + name +
-	       " /bin/bash -c"
-	       " '/opt/oai-gnb/bin/nr-softmodem"
-	       " -O /opt/oai-gnb/etc/gnb.conf"
-	       " --sa -E --rfsim"
-	       " --log_config.global_log_options level,nocolor,time &'";
-    }
-    // v26: uses .yaml file without --sa flag
     return "docker exec " + name +
 	   " /bin/bash -c"
 	   " '/opt/oai-gnb/bin/nr-softmodem"

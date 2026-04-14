@@ -160,13 +160,12 @@ void gNB_plugin::configureOAI(const char *project_path) {
     // Define the docker compose file path using PROJECT_PATH
     std::string file_path1 =
 	std::string(project_path) + "/oai_setup/docker-compose-gNB.yml";
-    // Define the configuration file path using PROJECT_PATH
+    // Define the configuration file path using PROJECT_PATH (YAML format for
+    // v26)
     std::string file_path2 =
-	std::string(project_path) +
-	"/oai_setup/conf/gnb.sa.bandn78.fr1.106PRB.rfsim.conf";
+	std::string(project_path) + "/oai_setup/oai/conf/gNB_config.yaml";
 
     // Define the key-value pairs for modifications in the Docker Compose file
-    // and configuration file
     const std::string key1 = "name";
     const std::string new_value1 = this->netName; // Set the network name
 
@@ -179,42 +178,10 @@ void gNB_plugin::configureOAI(const char *project_path) {
 	"oai-" +
 	this->model_name; // Set the container name based on the model name
 
-    const std::string key4 =
-	"ipv4"; // The parameter key to search for in the configuration file
-    const std::string new_value4 =
-	"\"" + this->ip_amf + "\";"; // Set the AMF's IPv4 address
-
-    const std::string key5 =
-	"GNB_IPV4_ADDRESS_FOR_NG_AMF"; // The parameter key to search for
-    const std::string new_value5 =
-	"\"" + this->ip_gnb + "\";"; // Set the gNB's IPv4 address for NG-AMF
-
-    const std::string key6 =
-	"GNB_IPV4_ADDRESS_FOR_NGU"; // The parameter key to search for
-    const std::string new_value6 =
-	"\"" + this->ip_gnb + "\";"; // Set the gNB's IPv4 address for NG-U
-
-    const std::string key7 = "Active_gNBs"; // The parameter key to search for
-    const std::string new_value7 =
-	"(\"" + this->model_name + "\");"; // SChanging gNB name in config file
-
-    const std::string key8 = "gNB_name"; // The parameter key to search for
-    const std::string new_value8 =
-	"\"" + this->model_name + "\";"; // Changing gNB name in config file
-
+    // Define the key-value pairs for modifications in the YAML configuration
+    // file
     std::string gNB_ID = extractAndConvertToHex(
 	this->model_name); // Extract and convert the gNB number to hexadecimal
-    const std::string key9 = "gNB_ID"; // The parameter key to search for
-    const std::string new_value9 =
-	gNB_ID + ";"; // Changing gNB ID number (hexadecimal) in config file
-
-    const std::string key10 = "mcc"; // The parameter key to search for
-    const std::string new_value10 =
-	this->mcc + ";"; // Changing the mcc in config file
-
-    const std::string key11 = "mnc"; // The parameter key to search for
-    const std::string new_value11 =
-	this->mnc + ";"; // Changing the mnc in config file
 
     const std::string old_key =
 	"oai_gNB"; // The old service name in the Docker Compose file
@@ -227,15 +194,19 @@ void gNB_plugin::configureOAI(const char *project_path) {
     modify_dockerC(file_path1, key2, new_value2, this->debug_logs);
     modify_dockerC(file_path1, key3, new_value3, this->debug_logs);
 
-    // Call modifyFile for each key-value pair to update the configuration file
-    modify_conf(file_path2, key4, new_value4, this->debug_logs);
-    modify_conf(file_path2, key5, new_value5, this->debug_logs);
-    modify_conf(file_path2, key6, new_value6, this->debug_logs);
-    modify_conf(file_path2, key7, new_value7, this->debug_logs);
-    modify_conf(file_path2, key8, new_value8, this->debug_logs);
-    modify_conf(file_path2, key9, new_value9, this->debug_logs);
-    modify_conf(file_path2, key10, new_value10, this->debug_logs);
-    modify_conf(file_path2, key11, new_value11, this->debug_logs);
+    // Call modify functions to update the YAML configuration file
+    modify_yaml_list_entry(file_path2, "Active_gNBs", this->model_name,
+			   this->debug_logs);
+    modify_dockerC(file_path2, "gNB_name", this->model_name, this->debug_logs);
+    modify_dockerC(file_path2, "gNB_ID", gNB_ID, this->debug_logs);
+    modify_dockerC(file_path2, "GNB_IPV4_ADDRESS_FOR_NG_AMF", this->ip_gnb,
+		   this->debug_logs);
+    modify_dockerC(file_path2, "GNB_IPV4_ADDRESS_FOR_NGU", this->ip_gnb,
+		   this->debug_logs);
+    modify_dockerC(file_path2, "mcc", this->mcc, this->debug_logs);
+    modify_dockerC(file_path2, "mnc", this->mnc, this->debug_logs);
+    modify_dockerC(file_path2, "ipv4", this->ip_amf, this->debug_logs);
+
     // Update the service name in the Docker Compose file
     modify_service_name(file_path1, old_key, new_key, this->debug_logs);
 

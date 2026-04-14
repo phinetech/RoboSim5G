@@ -190,7 +190,7 @@ If everything goes well you should see in the logs a table with the list of the 
 
 ```bash
 
-docker compose -f docker-compose-ue.yml up oai-nr-ue -d
+docker compose -f docker-compose-ue.yml up -d
 
 ```
 
@@ -276,7 +276,7 @@ _Some warning messages may appear during the build — they can usually be ignor
     
     - `docker-compose-gNB.yml`
         
-    - `gnb.sa.bandn78.fr1.106PRB.rfsim.conf`
+    - `gNB_config.yaml`
         
     
     Changes include:
@@ -579,7 +579,7 @@ When the plugin is loaded, it performs the following steps:
     
     - `docker-compose-UE.yml`
         
-    - `conf/UE<robot_ID>.conf`
+    - `oai/conf/UE_config.yaml`
 - **Copies the user robot workspace** inside the `$PROJECT_PATH/images/ue_amr` folder, which should contain:
 
 	- robot logic launch file
@@ -723,7 +723,6 @@ To add the UE plugin to your SDF world file, include:
 	<opc>C42449363BBAD02B66D16BC975D77CC1</opc>
 	<dnn>oai</dnn>
 	<nssai_sst>1</nssai_sst>
-	<nssai_sd>no</nssai_sd>
 	<robot_project_path>${PROJECT_PATH}/nav_stack</robot_project_path>
 	<robot_project_name>nav_stack</robot_project_name>
 	<execute_robot_launch_file>true</execute_robot_launch_file>
@@ -741,7 +740,7 @@ To add the UE plugin to your SDF world file, include:
 | --------------------------- | --------------------------------------------------------------------------- |
 | `cn_type`                   | Core Network type (`oai`, `free5gc`, or `open5gs`)                          |
 | `robot_container_name`      | Name of the UE container to be launched (e.g., `ue_turtlebot`)              |
-| `robot_id`                  | Unique ID for the robot, used to select `UE<robot_id>.conf`                 |
+| `robot_id`                  | Unique ID for the robot                                                     |
 | `ip_robotUE`                | Static IP assigned to the robot UE container                                |
 | `net_name`                  | Name of the Docker network to attach the UE container                       |
 | `ip_gnb`                    | IP address of the gNB container                                             |
@@ -752,7 +751,7 @@ To add the UE plugin to your SDF world file, include:
 | `opc`                       | Operator-specific key used in authentication                                |
 | `dnn`                       | Data network name (e.g., `oai`, `internet`, `ims`)                          |
 | `nssai_sst`                 | Network slice type (e.g., `1` for eMBB, URLLC, etc.)                        |
-| `nssai_sd`                  | Slice differentiator. If set to `no`, it will not be assigned               |
+| `nssai_sd`                  | Slice differentiator. Optional (defaults to `no`); if omitted or `no`, not written to UE config |
 | `robot_project_path`        | Path to the ROS 2 workspace with robot logic                                |
 | `robot_project_name`        | Name of the ROS 2 workspace with robot logic                                |
 | `execute_robot_launch_file` | Whether to launch robot logic inside the container (`true` or `false`)      |
@@ -765,12 +764,12 @@ To add the UE plugin to your SDF world file, include:
 
 ### ⚠️ Notes
 
-- Files such as `UE<robot_id>.conf` should be located in:  
-    `path/demo/oai_setup/conf/UE<robot_id>.conf`
+- UE credential files are located in:
+    `path/demo/oai_setup/oai/conf/UE_config.yaml`
     
 - All credentials (`imsi`, `key`, `opc`, `dnn`, `nssai_sst`, `nssai_sd`) **must match** the configuration of the 5G core network.
     
-- If `nssai_sd` is set to `"no"`, the `nssai_sd` won't be assigned .
+- The `nssai_sd` parameter is **optional** (defaults to `"no"`). If omitted or set to `"no"`, it won't be written to the UE config.
     
 - The `<subnet_5G>` must match the value defined in the core network's configuration file:
  ```sh

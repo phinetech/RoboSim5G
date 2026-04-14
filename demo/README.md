@@ -172,7 +172,6 @@ Inside the world file for your chosen CN (see [Configuring Gazebo World for Your
   <opc>C42449363BBAD02B66D16BC975D77CC1</opc>
   <dnn>oai</dnn>
   <nssai_sst>1</nssai_sst>
-  <nssai_sd>no</nssai_sd>
   <robot_project_path>${PROJECT_PATH}/nav_stack</robot_project_path>
   <robot_project_name>nav_stack</robot_project_name>
   <execute_robot_launch_file>true</execute_robot_launch_file>

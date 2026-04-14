@@ -108,7 +108,7 @@ Expected output showing gNB registration:
 
 ```bash
 # Start UE
-docker compose -f docker-compose-ue.yml up oai-nr-ue -d
+docker compose -f docker-compose-ue.yml up -d
 
 # Verify UE registered (wait 5-10 seconds)
 docker logs oai-amf
@@ -245,8 +245,8 @@ All OAI network functions share a single unified configuration file:
 - `./policies/qos/qos_data/qos_data.yaml` - QoS flow configuration
 
 ### Radio Access Network (for testing)
-- `./conf/gnb.sa.bandn78.fr1.106PRB.rfsim.conf` - gNB configuration (rfsimulator mode)
-- `./conf/ue1.conf` - UE configuration with subscriber credentials
+- `./oai/conf/gNB_config.yaml` - gNB configuration (rfsimulator mode)
+- `./oai/conf/UE_config.yaml` - UE configuration with subscriber credentials
 
 ## Default Network Parameters
 
@@ -277,7 +277,7 @@ One network slice is configured by default:
    ```
 
 2. **Verify UE credentials match database:**
-   - Check `./conf/ue1.conf` for IMSI, K, OPc
+   - Check `./oai/conf/UE_config.yaml` for IMSI, K, OPc
    - Ensure DNN (`oai`) matches database configuration
    - Verify S-NSSAI (SST=1) is configured
 
@@ -315,7 +315,7 @@ One network slice is configured by default:
 
 3. **Verify PLMN configuration:**
    - gNB PLMN must match AMF PLMN (001/01)
-   - Check `./conf/gnb.sa.bandn78.fr1.106PRB.rfsim.conf`
+   - Check `./oai/conf/gNB_config.yaml`
    - Verify in `./conf/config.yaml` under AMF section
 
 4. **Check gNB logs:**
@@ -491,7 +491,7 @@ amf:
 ```
 
 Also update:
-- gNB configuration (`gnb.sa.bandn78.fr1.106PRB.rfsim.conf`)
+- gNB configuration (`gNB_config.yaml`)
 - Subscriber IMSIs in the database (must start with new MCC/MNC)
 
 ## Integration with RoboSim5G

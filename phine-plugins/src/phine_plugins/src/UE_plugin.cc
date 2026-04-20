@@ -154,12 +154,12 @@ void UE_plugin::Configure(const gz::sim::Entity &_entity,
 }
 
 void UE_plugin::configureOAI(const char *project_path) {
-    // Define file paths using PROJECT_PATH
+    // Define file paths using PROJECT_PATH (unified location)
     std::string file_path1 =
-	std::string(project_path) + "/oai_setup/docker-compose-ue.yml";
+	std::string(project_path) + "/oai/docker-compose-ue.yml";
     // YAML config file (v26 format) — modify UE_config.yaml directly
-    std::string file_path2 = std::string(project_path) +
-			     "/oai_setup/oai/conf/UE_config.yaml";
+    std::string file_path2 =
+	std::string(project_path) + "/oai/conf/UE_config.yaml";
     std::string file_path3 =
 	std::string(project_path) + "/images/ue_amr/dds.xml";
     std::string file_path4 = std::string(project_path) + "/images/ue_amr";
@@ -183,13 +183,11 @@ void UE_plugin::configureOAI(const char *project_path) {
     modify_dockerC(file_path2, "opc", this->opc, this->debug_logs);
     modify_dockerC(file_path2, "dnn", this->dnn, this->debug_logs);
     modify_dockerC(file_path2, "nssai_sst", this->nssai_sst, this->debug_logs);
-    if (this->nssai_sd != "no") {
-	modify_dockerC(file_path2, "nssai_sd", this->nssai_sd,
-		       this->debug_logs);
-    }
+    modify_or_comment_dockerC(file_path2, "nssai_sd", this->nssai_sd,
+			      this->debug_logs);
 
     // Compose and run Docker container for UE robot
-    std::string folder_path = std::string(project_path) + "/oai_setup";
+    std::string folder_path = std::string(project_path) + "/oai";
     std::string docker_compose_command =
 	"cd " + folder_path + " && " + "NAME_ROBOT_" + this->robot_id + "=" +
 	this->robot_container_name + " " + "IP_GNB=" + this->ip_gNB + " " +
@@ -201,17 +199,18 @@ void UE_plugin::configureOAI(const char *project_path) {
 	this->robot_launch_file_name + " " + "EXECUTE_ROBOT_LAUNCH_FILE_" +
 	this->robot_id + "=" + this->execute_robot_launch_file + " " +
 	"ROS_DISCOVERY_SERVER=" + this->ros_discovery_server + " " +
+	"UE_CARRIER_FREQ=3619200000 " +
 	"docker compose -f docker-compose-ue.yml up robot_" + this->robot_id +
 	" -d";
     system(docker_compose_command.c_str());
 }
 
 void UE_plugin::configureFree5gc(const char *project_path) {
-    // Define file paths for free5gc setup
+    // Define file paths for free5gc setup (unified location)
     std::string file_path1 =
-	std::string(project_path) + "/free5gc_setup/docker-compose-ue.yml";
+	std::string(project_path) + "/oai/docker-compose-ue.yml";
     std::string file_path2 =
-	std::string(project_path) + "/free5gc_setup/oai/UE_config.yaml";
+	std::string(project_path) + "/oai/conf/UE_config.yaml";
     std::string file_path3 =
 	std::string(project_path) + "/images/ue_amr/dds.xml";
     std::string file_path4 = std::string(project_path) + "/images/ue_amr";
@@ -235,10 +234,11 @@ void UE_plugin::configureFree5gc(const char *project_path) {
     modify_dockerC(file_path2, "opc", this->opc, this->debug_logs);
     modify_dockerC(file_path2, "dnn", this->dnn, this->debug_logs);
     modify_dockerC(file_path2, "nssai_sst", this->nssai_sst, this->debug_logs);
-    modify_dockerC(file_path2, "nssai_sd", this->nssai_sd, this->debug_logs);
+    modify_or_comment_dockerC(file_path2, "nssai_sd", this->nssai_sd,
+			      this->debug_logs);
 
     // Compose and run Docker container for UE robot
-    std::string folder_path = std::string(project_path) + "/free5gc_setup";
+    std::string folder_path = std::string(project_path) + "/oai";
     std::string docker_compose_command =
 	"cd " + folder_path + " && " + "NAME_ROBOT_" + this->robot_id + "=" +
 	this->robot_container_name + " " + "IP_GNB=" + this->ip_gNB + " " +
@@ -250,17 +250,18 @@ void UE_plugin::configureFree5gc(const char *project_path) {
 	this->robot_launch_file_name + " " + "EXECUTE_ROBOT_LAUNCH_FILE_" +
 	this->robot_id + "=" + this->execute_robot_launch_file + " " +
 	"ROS_DISCOVERY_SERVER=" + this->ros_discovery_server + " " +
+	"UE_CARRIER_FREQ=3319680000 " +
 	"docker compose -f docker-compose-ue.yml up robot_" + this->robot_id +
 	" -d";
     system(docker_compose_command.c_str());
 }
 
 void UE_plugin::configureOpen5gs(const char *project_path) {
-    // Define file paths for open5gs setup
+    // Define file paths for open5gs setup (unified location)
     std::string file_path1 =
-	std::string(project_path) + "/open5gs_setup/docker-compose-ue.yml";
+	std::string(project_path) + "/oai/docker-compose-ue.yml";
     std::string file_path2 =
-	std::string(project_path) + "/open5gs_setup/oai/conf/UE_config.yaml";
+	std::string(project_path) + "/oai/conf/UE_config.yaml";
     std::string file_path3 =
 	std::string(project_path) + "/images/ue_amr/dds.xml";
     std::string file_path4 = std::string(project_path) + "/images/ue_amr";
@@ -284,10 +285,11 @@ void UE_plugin::configureOpen5gs(const char *project_path) {
     modify_dockerC(file_path2, "opc", this->opc, this->debug_logs);
     modify_dockerC(file_path2, "dnn", this->dnn, this->debug_logs);
     modify_dockerC(file_path2, "nssai_sst", this->nssai_sst, this->debug_logs);
-    modify_dockerC(file_path2, "nssai_sd", this->nssai_sd, this->debug_logs);
+    modify_or_comment_dockerC(file_path2, "nssai_sd", this->nssai_sd,
+			      this->debug_logs);
 
     // Compose and run Docker container for UE robot
-    std::string folder_path = std::string(project_path) + "/open5gs_setup";
+    std::string folder_path = std::string(project_path) + "/oai";
     std::string docker_compose_command =
 	"cd " + folder_path + " && " + "NAME_ROBOT_" + this->robot_id + "=" +
 	this->robot_container_name + " " + "IP_GNB=" + this->ip_gNB + " " +
@@ -299,6 +301,7 @@ void UE_plugin::configureOpen5gs(const char *project_path) {
 	this->robot_launch_file_name + " " + "EXECUTE_ROBOT_LAUNCH_FILE_" +
 	this->robot_id + "=" + this->execute_robot_launch_file + " " +
 	"ROS_DISCOVERY_SERVER=" + this->ros_discovery_server + " " +
+	"UE_CARRIER_FREQ=3319680000 " +
 	"docker compose -f docker-compose-ue.yml up robot_" + this->robot_id +
 	" -d";
     system(docker_compose_command.c_str());

@@ -162,6 +162,104 @@ void modify_dockerC(const std::string &file_path, const std::string &key,
 }
 
 /**
+ * @brief Modifies or comments a YAML configuration line based on the value.
+ *
+ * This function handles conditional commenting of YAML configuration lines:
+ * - If new_value is "no", the line containing the key is commented out with '#'.
+ * - If new_value is not "no", the line is uncommented (if needed) and the value is set.
+ *
+ * @param file_path The path to the Docker configuration file to be modified.
+ * @param key The key whose value should be updated or commented in the configuration file.
+ * @param new_value The new value to assign to the specified key, or "no" to comment the line.
+ * @param debug If true, enables debug output for tracing the modification process.
+ */
+void modify_or_comment_dockerC(const std::string &file_path,
+			       const std::string &key,
+			       const std::string &new_value, bool debug) {
+    // Open the file for reading
+    std::ifstream file_in(file_path);
+    if (!file_in) {
+	RoboSimLogger::Log(LogLevel::ERR,
+			   "Error opening file for reading: " + file_path);
+	return;
+    }
+
+    std::stringstream modified_content;
+    std::string line;
+
+    // Create a regex pattern to match the key (possibly commented)
+    // Match: optional spaces, optional comment (#), optional spaces, key, colon, value
+    std::string regex_pattern = R"(^(\s*)(#\s*)?(\b)" + key + R"(\b\s*:\s*\S+))";
+
+    // Iterate through each line of the file
+    while (std::getline(file_in, line)) {
+	std::regex pattern(regex_pattern);
+
+	// Check if the line matches the pattern (commented or not)
+	if (std::regex_search(line, pattern)) {
+	    if (debug) {
+		RoboSimLogger::Log(LogLevel::DEBUG, "Matched Line: " + line);
+	    }
+
+	    std::smatch match;
+	    // Capture leading whitespace and optional YAML list marker (- )
+	    if (std::regex_search(
+		    line, match,
+		    std::regex(R"(^(\s*)(-\s*)?(#\s*)?(.*)$)"))) {
+		std::string leading_space = match.str(1);
+		std::string list_marker = match.str(2);
+
+		if (new_value == "no") {
+		    // Comment out the line
+		    // Remove existing comment if present, then add it back
+		    std::string uncommented_line = line;
+		    // Remove leading whitespace and comment
+		    uncommented_line = std::regex_replace(
+			uncommented_line, std::regex(R"(^\s*#\s*)"), "");
+		    // Re-add proper spacing and comment
+		    line = leading_space + list_marker + "# " + key + " : " +
+			   "<value>";
+		    if (debug) {
+			RoboSimLogger::Log(
+			    LogLevel::DEBUG,
+			    "Commenting out line: " + line);
+		    }
+		} else {
+		    // Uncomment and set the value
+		    line = leading_space + list_marker + key + " : " +
+			   new_value;
+		    if (debug) {
+			RoboSimLogger::Log(
+			    LogLevel::DEBUG,
+			    "Setting value: " + line);
+		    }
+		}
+	    }
+	}
+
+	// Append the (modified or unmodified) line to the output content
+	modified_content << line << "\n";
+    }
+
+    file_in.close();
+
+    // Open the file for writing and overwrite it with the modified content
+    std::ofstream file_out(file_path, std::ios::trunc);
+    if (!file_out) {
+	RoboSimLogger::Log(LogLevel::ERR,
+			   "Error opening file for writing: " + file_path);
+	return;
+    }
+
+    file_out << modified_content.str();
+    file_out.close();
+
+    if (debug) {
+	RoboSimLogger::Log(LogLevel::DEBUG, "File modified successfully.");
+    }
+}
+
+/**
  * @brief Modifies the value of a specified key in a configuration file.
  *
  * This function searches for a line in the given file that matches the

@@ -159,11 +159,11 @@ void gNB_plugin::Configure(const gz::sim::Entity &_entity,
 void gNB_plugin::configureOAI(const char *project_path) {
     // Define the docker compose file path using PROJECT_PATH
     std::string file_path1 =
-	std::string(project_path) + "/oai_setup/docker-compose-gNB.yml";
+	std::string(project_path) + "/oai/docker-compose-gNB.yml";
     // Define the configuration file path using PROJECT_PATH (YAML format for
     // v26)
     std::string file_path2 =
-	std::string(project_path) + "/oai_setup/oai/conf/gNB_config.yaml";
+	std::string(project_path) + "/oai/conf/gNB_config.yaml";
 
     // Define the key-value pairs for modifications in the Docker Compose file
     const std::string key1 = "name";
@@ -184,9 +184,8 @@ void gNB_plugin::configureOAI(const char *project_path) {
 	this->model_name); // Extract and convert the gNB number to hexadecimal
 
     const std::string old_key =
-	"oai_gNB"; // The old service name in the Docker Compose file
+	"gNB"; // The old service name in the Docker Compose file
     const std::string new_key =
-	"oai_" +
 	this->model_name; // The new service name based on the model name
 
     // Call modifyFile for each key-value pair to update the Docker Compose file
@@ -211,8 +210,7 @@ void gNB_plugin::configureOAI(const char *project_path) {
     modify_service_name(file_path1, old_key, new_key, this->debug_logs);
 
     // Define the Docker Compose command to run in that specific folder
-    std::string folder_path =
-	std::string(project_path) + "/oai_setup"; // Update with your path
+    std::string folder_path = std::string(project_path) + "/oai";
     std::string docker_compose_command =
 	"cd " + folder_path +
 	" && docker compose -f docker-compose-gNB.yml up -d";
@@ -223,30 +221,31 @@ void gNB_plugin::configureOAI(const char *project_path) {
 }
 
 void gNB_plugin::configureFree5gc(const char *project_path) {
-    // Define file paths for free5gc setup
+    // Define file paths for free5gc setup (unified location)
     std::string file_path1 =
-	std::string(project_path) + "/free5gc_setup/docker-compose-gNB.yml";
+	std::string(project_path) + "/oai/docker-compose-gNB.yml";
+    std::string file_path_override =
+	std::string(project_path) + "/oai/docker-compose-gNB.free5gc.yml";
     std::string file_path2 =
-	std::string(project_path) + "/free5gc_setup/oai/gNB_config.yaml";
+	std::string(project_path) + "/oai/conf/gNB_config.yaml";
 
-    // Modify Docker Compose file
-    // container_name is unique per key
+    // Modify base Docker Compose file (public_net only)
     modify_dockerC(file_path1, "container_name", "oai-" + this->model_name,
 		   this->debug_logs);
-    // ipv4_address appears twice: 1st for public_net, 2nd for n3_net
-    modify_dockerC_nth(file_path1, "ipv4_address", this->ip_gnb, 1,
-		       this->debug_logs);
-    modify_dockerC_nth(file_path1, "ipv4_address", this->ip_gnb_n3, 2,
-		       this->debug_logs);
-    // network name appears twice: 1st for public_net, 2nd for n3_net
-    modify_dockerC_nth(file_path1, "name", this->netName, 1, this->debug_logs);
-    modify_dockerC_nth(file_path1, "name", this->n3_net_name, 2,
-		       this->debug_logs);
+    modify_dockerC(file_path1, "ipv4_address", this->ip_gnb, this->debug_logs);
+    modify_dockerC(file_path1, "name", this->netName, this->debug_logs);
 
-    // Update the service name in Docker Compose
+    // Modify override Docker Compose file (n3_net)
+    modify_dockerC(file_path_override, "ipv4_address", this->ip_gnb_n3,
+		   this->debug_logs);
+    modify_dockerC(file_path_override, "name", this->n3_net_name,
+		   this->debug_logs);
+
+    // Update the service name in both Docker Compose files
     const std::string old_key = "gNB";
     const std::string new_key = this->model_name;
     modify_service_name(file_path1, old_key, new_key, this->debug_logs);
+    modify_service_name(file_path_override, old_key, new_key, this->debug_logs);
 
     // Modify gNB YAML configuration file
     std::string gNB_ID = extractAndConvertToHex(this->model_name);
@@ -263,23 +262,25 @@ void gNB_plugin::configureFree5gc(const char *project_path) {
     modify_dockerC(file_path2, "mnc", this->mnc, this->debug_logs);
     modify_dockerC(file_path2, "ipv4", this->ip_amf, this->debug_logs);
 
-    // Launch Docker Compose for the free5gc gNB
-    std::string folder_path = std::string(project_path) + "/free5gc_setup";
+    // Launch Docker Compose for the free5gc gNB (base + override)
+    std::string folder_path = std::string(project_path) + "/oai";
     std::string docker_compose_command =
 	"cd " + folder_path +
-	" && docker compose -f docker-compose-gNB.yml up -d";
+	" && docker compose -f docker-compose-gNB.yml"
+	" -f docker-compose-gNB.free5gc.yml up -d";
     system(docker_compose_command.c_str());
 
     // Reset the service name for subsequent gNBs
     modify_service_name(file_path1, new_key, old_key, this->debug_logs);
+    modify_service_name(file_path_override, new_key, old_key, this->debug_logs);
 }
 
 void gNB_plugin::configureOpen5gs(const char *project_path) {
-    // Define file paths for open5gs setup
+    // Define file paths for open5gs setup (unified location)
     std::string file_path1 =
-	std::string(project_path) + "/open5gs_setup/docker-compose-gNB.yml";
+	std::string(project_path) + "/oai/docker-compose-gNB.yml";
     std::string file_path2 =
-	std::string(project_path) + "/open5gs_setup/oai/conf/gNB_config.yaml";
+	std::string(project_path) + "/oai/conf/gNB_config.yaml";
 
     // Modify Docker Compose file
     modify_dockerC(file_path1, "container_name", "oai-" + this->model_name,
@@ -308,7 +309,7 @@ void gNB_plugin::configureOpen5gs(const char *project_path) {
     modify_dockerC(file_path2, "ipv4", this->ip_amf, this->debug_logs);
 
     // Launch Docker Compose for the open5gs gNB
-    std::string folder_path = std::string(project_path) + "/open5gs_setup";
+    std::string folder_path = std::string(project_path) + "/oai";
     std::string docker_compose_command =
 	"cd " + folder_path +
 	" && docker compose -f docker-compose-gNB.yml up -d";

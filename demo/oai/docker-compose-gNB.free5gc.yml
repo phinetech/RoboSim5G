@@ -1,0 +1,13 @@
+services:
+    gNB :
+        cap_add:
+            - SYS_NICE
+        cap_drop:
+            - ALL
+        networks:
+            n3_net:
+                ipv4_address : 192.168.71.160
+networks:
+    n3_net:
+        external: true
+        name : demo-oai-n3-net

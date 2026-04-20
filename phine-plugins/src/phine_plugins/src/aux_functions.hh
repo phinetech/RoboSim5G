@@ -105,6 +105,21 @@ void modify_dockerC(const std::string &file_path, const std::string &key,
 		    const std::string &new_value, bool debug);
 
 /**
+ * @brief Modifies or comments a YAML configuration line based on the value.
+ *
+ * This function handles conditional commenting of YAML configuration lines:
+ * - If new_value is "no", the line containing the key is commented out with '#'.
+ * - If new_value is not "no", the line is uncommented (if needed) and the value is set.
+ *
+ * @param file_path The path to the Docker configuration file to be modified.
+ * @param key The key whose value should be updated or commented in the configuration file.
+ * @param new_value The new value to assign to the specified key, or "no" to comment the line.
+ * @param debug If true, enables debug output for tracing the modification process.
+ */
+void modify_or_comment_dockerC(const std::string &file_path, const std::string &key,
+			       const std::string &new_value, bool debug);
+
+/**
  * @brief Modifies the value associated with a specified key in a gNb
  * configuration file.
  *

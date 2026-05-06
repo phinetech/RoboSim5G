@@ -65,7 +65,8 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time,
                          'robot_description': doc.toxml()}])
 
-    world = os.path.join(get_package_share_directory('ign_turtlebot'), "worlds", "world_only.sdf")
+    core_network = os.environ.get('CORE_NETWORK', 'oai')
+    world = os.path.join(get_package_share_directory('ign_turtlebot'), "worlds", f"world_only_{core_network}.sdf")
 
     return LaunchDescription([
         ign_resource_path,

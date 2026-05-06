@@ -6,6 +6,7 @@ CORE_NETWORK=${CORE_NETWORK:-oai}
 REPO_ROOT=$(cd "$(dirname "$0")/.." && pwd)
 DEMO_DIR=$(cd "$(dirname "$0")" && pwd)
 CN_DIR="$REPO_ROOT/core_network_setup/$CORE_NETWORK"
+export NAME_ROBOT_1=${NAME_ROBOT_1:-"ue_turtlebot"}
 
 echo "=== Stopping RoboSim5G native demo ($CORE_NETWORK) ==="
 
@@ -14,7 +15,7 @@ pkill -f "ign gazebo" 2>/dev/null || true
 
 # Stop UE services (robot, rcc, dds)
 cd "$DEMO_DIR"
-docker compose -f oai/docker-compose-ue.yml down 2>/dev/null || true
+docker compose -f oai/docker-compose-ue.yml down 
 
 # Stop gNB containers
 docker ps -q --filter ancestor=oaisoftwarealliance/oai-gnb:2026.w04 | xargs -r -I {} docker stop {}

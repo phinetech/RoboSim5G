@@ -51,11 +51,8 @@ export ROS_DISCOVERY_SERVER="192.168.70.159:11811"
 export GNB_NAME_FOR_BUTTON=${GNB_NAME_FOR_BUTTON:-"gNB1"}
 export UE_NAME_FOR_BUTTON=${UE_NAME_FOR_BUTTON:-"ue_turtlebot"}
 source "$DEMO_DIR/gazebo_launch/install/setup.bash"
-
-# Set DDS profile for free5gc/open5gs
-if [ "$CORE_NETWORK" != "oai" ]; then
-    export FASTRTPS_DEFAULT_PROFILES_FILE="$DEMO_DIR/dds.xml"
-fi
+export FASTRTPS_DEFAULT_PROFILES_FILE="$DEMO_DIR/dds.xml"
+export NAME_ROBOT_1=${NAME_ROBOT_1:-"ue_turtlebot"}
 
 # 1. Start the core network
 echo "Starting $CORE_NETWORK core network..."
@@ -67,6 +64,14 @@ if [ "$CORE_NETWORK" = "oai" ]; then
     ./wait_for_core_network.sh
 else
     sleep 10
+fi
+
+# 3. Add UE subscriber (open5gs only, after DB is ready)
+if [ "$CORE_NETWORK" = "open5gs" ]; then
+    echo "Adding UE subscriber to Open5GS database..."
+    cd "$CN_DIR/scripts"
+    ./add_ue_subscriber.sh
+    cd "$CN_DIR"
 fi
 
 # 3. Add host route (ignore if it already exists)

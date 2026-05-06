@@ -11,8 +11,8 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - ./db_data:/data/db
-      - ./db_config:/data/configdb
+      - db_data:/data/db
+      - db_config:/data/configdb
 
   nrf:
     container_name: nrf
@@ -174,7 +174,13 @@ networks:
 
 volumes:
   db_data:
+    name: open5gs_db_data
+    labels:
+      org.open5gs.mongodb_version: ${MONGODB_VERSION:-6.0}
   db_config:
+    name: open5gs_db_config
+    labels:
+      org.open5gs.mongodb_version: ${MONGODB_VERSION:-6.0}
 
 configs:
   nrf_config:

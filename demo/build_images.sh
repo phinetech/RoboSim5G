@@ -1,5 +1,5 @@
 cd gazebo_launch/
-colcon build
+colcon build --cmake-clean-cache 
 cd ..
 cd images/dds_discovery_server
 docker build -t dds_discovery_server .

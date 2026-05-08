@@ -81,30 +81,30 @@ RoboSim5G supports **multiple 5G Core Network implementations**. You can choose 
 
 📖 **See [doc/5G_CORE_NETWORKS.md](doc/5G_CORE_NETWORKS.md) for a detailed comparison and guidance on choosing the right core network.**
 
-Each core network has its own README with setup instructions in the respective `demo/<cn_name>_setup/` folder.
+Each core network has its own setup folder under `core_network_setup/`:
+- **OAI**: `core_network_setup/oai/`
+- **free5GC**: `core_network_setup/free5gc/`
+- **Open5GS**: `core_network_setup/open5gs/`
 
 ## Core Network Setup (Example: OAI)
 
-The following example uses **OAI**, but similar steps apply to other core networks. Refer to the specific README for each:
-- **OAI**: `demo/oai_setup/README.md`
-- **free5GC**: `demo/free5gc_setup/README.md`
-- **Open5GS**: `demo/open5gs_setup/README.md` *(coming soon)*
+The following example uses **OAI**, but similar steps apply to other core networks.
 
-Considering `path` the absolute path to the repository, the OAI files can be found in `path/demo/oai_setup`. Inside this folder there are 3 docker-compose file:
+Considering `path` the absolute path to the repository, the OAI core network files can be found in `path/core_network_setup/oai`. Inside this folder there is a `docker-compose.yml` for launching the OAI Core Network containers.
 
-- docker-compose.yml for launching the OAI Core Network containers
+The gNB and UE docker-compose files are located in the demo folders under `oai/`:
 
-- docker-compose-gNB.yml for launching the OAI gNB container
+- `demo/oai/docker-compose-gNB.yml` for launching the OAI gNB container (used by all core networks, since the RAN components come from OAI v2026.w04)
 
-- docker-compose-ue.yml for launching the OAI UE container (and also other containers related to the demo)
+- `demo/oai/docker-compose-ue.yml` for launching the OAI UE container (and also other containers related to the demo)
 
-Other folders are present inside `oai-setup`, containing configuration files useful for these containers. It is possible to verify that the OAI modules work, by following this pipeline:
+Other folders are present inside `core_network_setup/oai`, containing configuration files useful for these containers. It is possible to verify that the OAI modules work, by following this pipeline:
 
 - In one terminal run the core network:
 
 ```
 
-cd path/demo/oai_setup
+cd path/core_network_setup/oai
 
 docker compose up -d
 
@@ -156,11 +156,12 @@ If everything went correctly, in the logs you should see:
 
 ```
 
-- in the same terminal run the gNB container:
+- in the same terminal run the gNB container (from the demo folder):
 
 ```bash
 
-docker compose -f docker-compose-ran.yml up -d
+cd path/demo/oai
+docker compose -f docker-compose-gNB.yml up -d
 
 ```
 
@@ -186,7 +187,7 @@ If everything goes well you should see in the logs a table with the list of the 
 
 ```
 
-- in the same terminal run the UE container :
+- in the same terminal run the UE container:
 
 ```bash
 
@@ -220,11 +221,12 @@ To stop and remove all the containers:
 
 ```bash
 
+cd path/demo/oai
 docker compose -f docker-compose-gNB.yml down
-
 docker compose -f docker-compose-ue.yml down
 
-docker compose down -d
+cd path/core_network_setup/oai
+docker compose down
 
 
 ```
@@ -305,10 +307,12 @@ _Some warning messages may appear during the build — they can usually be ignor
 Before launching the world, make sure the following environment variables are exported:
 
 ```bash
-export PROJECT_PATH=<your-project-path>  # Must contain oai_setup/ 
+export PROJECT_PATH=<your-project-path>  # Must contain oai/ 
 export IGN_GAZEBO_SYSTEM_PLUGIN_PATH=<path-to-plugins>  # Contains libgNB-plugin.so
 export IGN_GAZEBO_RESOURCE_PATH=<path-to-models>  # Contains phine_gNB model`
 ```
+
+**Note:** The world file is now automatically selected based on the `CORE_NETWORK` environment variable (defaults to `oai`). The launch file reads `CORE_NETWORK` and loads `world_only_{core_network}.sdf` — no manual editing of the launch file is needed.
 ### 📝 gNB World File Declaration
 
 Add the following to your `world-file.sdf` to include the gNB:
@@ -343,7 +347,7 @@ Add the following to your `world-file.sdf` to include the gNB:
 | `link_name`           | Link whose pose is streamed over ROS 2 (keep as `phine_cell` unless model changes)               |
 | `net_name`            | Name of the Docker network to attach the gNB container                                           |
 | `IP_GNB`              | Static IP address of the gNB container                                                           |
-| `IP_AMF`              | IP address of the AMF container  <br>(Must match value in `oai_setup/conf/config.yaml`)          |
+| `IP_AMF`              | IP address of the AMF container  <br>(Must match value in `core_network_setup/oai/conf/config.yaml`)          |
 | `debug`               | Set to `true` to enable plugin debug output                                                      |
 | `mobile_country_code` | MCC used for registration, must match value in AMF config                                        |
 | `mobile_network_code` | MNC used for registration, must match value in AMF config                                        |
@@ -464,7 +468,7 @@ The system relies on three main networks:
     
     - Used for communication between the remote control center and the robot
         
-    - Subnet is configurable in `path/demo/oai-setuo/conf/config.yaml`
+    - Subnet is configurable in `path/core_network_setup/oai/conf/config.yaml`
 
 ---
 
@@ -575,9 +579,9 @@ The Discovery Server IP must match the value in both the UE plugin `<ros_discove
 
 When the plugin is loaded, it performs the following steps:
 
-- **Modifies configuration files for the UE** in `$PROJECT_PATH/oai_setup`, specifically:
+- **Modifies configuration files for the UE** in `$PROJECT_PATH/oai`, specifically:
     
-    - `docker-compose-UE.yml`
+    - `docker-compose-ue.yml`
         
     - `oai/conf/UE_config.yaml`
 - **Copies the user robot workspace** inside the `$PROJECT_PATH/images/ue_amr` folder, which should contain:
@@ -593,7 +597,7 @@ When the plugin is loaded, it performs the following steps:
         
     - The `ros_gz_bridge`
         
-- **Launches the robot-UE container**, using the `robot_<robot_ID>` service defined in `$PROJECT_PATH/oai_setup/docker-compose-ue.yml`  
+- **Launches the robot-UE container**, using the `robot_<robot_ID>` service defined in `$PROJECT_PATH/oai/docker-compose-ue.yml`  
     _(Currently, only `<robot_ID>=1` is tested.)_
     
 - **Automatically launches the ROS-Gazebo bridge** inside the container
@@ -610,7 +614,7 @@ When the plugin is loaded, it performs the following steps:
 Set the following environment variables on the host system:
 
 ```sh
-export PROJECT_PATH=<your-project-path>  # Must contain oai_setup/
+export PROJECT_PATH=<your-project-path>  # Must contain oai/
 export IGN_GAZEBO_SYSTEM_PLUGIN_PATH=<path-to-plugins> # Contains libUE-plugin.so and libgNB-plugin.so
 export IGN_GAZEBO_RESOURCE_PATH=<path-to-models>  # Contains phine-gNB model
 export ROS_DOMAIN_ID=<your-ros2-domain-id>  # Shared by host and robot-UE container
@@ -653,14 +657,14 @@ Refer to `path/demo/gazebo_launch` for an example.
 #### ✅ Required Folder Structure and Images
 
 - The plugin expects the folder:  
-    `$PROJECT_PATH/oai_setup/images/ue_amr`  
+    `$PROJECT_PATH/oai/images/ue_amr`  
     It must contain the files from:  
-    `path/demo/oai_setup/images/ue_amr`
+    `path/demo/images/ue_amr`
     
 - This directory must contain a `Dockerfile` used to build the `ue_amr` image.  
     You can **customize the Dockerfile** to install additional robot dependencies or ROS packages.
     
-- The folder `$PROJECT_PATH/oai_setup` must also contain:
+- The folder `$PROJECT_PATH/oai` must also contain:
     
     - All configuration files for the 5G OAI components
         
@@ -668,7 +672,7 @@ Refer to `path/demo/gazebo_launch` for an example.
         
     
     Specifically, the plugin will launch the **`robot_<robot_ID>` service** defined in:  
-    `$PROJECT_PATH/oai_setup/docker-compose-ue.yml`
+    `$PROJECT_PATH/oai/docker-compose-ue.yml`
     
     You may extend `docker-compose-ue.yml` to include services for:
     
@@ -765,7 +769,7 @@ To add the UE plugin to your SDF world file, include:
 ### ⚠️ Notes
 
 - UE credential files are located in:
-    `path/demo/oai_setup/oai/conf/UE_config.yaml`
+    `path/demo/oai/conf/UE_config.yaml`
     
 - All credentials (`imsi`, `key`, `opc`, `dnn`, `nssai_sst`, `nssai_sd`) **must match** the configuration of the 5G core network.
     
@@ -773,7 +777,7 @@ To add the UE plugin to your SDF world file, include:
     
 - The `<subnet_5G>` must match the value defined in the core network's configuration file:
  ```sh
-    path/demo/oai_setup/conf/config.yaml
+    path/core_network_setup/oai/conf/config.yaml
 ```
     
 - Be sure to follow the same network and workspace structure as the demo for compatibility.
@@ -1002,7 +1006,7 @@ Similar to gNB, with an additional field:
 ### ✅ Tested Configurations
 
 These plugins have been **tested and verified** with:
-- **OAI 5G Core Network** (`oai_setup`)
+- **OAI 5G Core Network**
 - **demo** mode (Gazebo on host)
 - **demo_containerized** mode (Gazebo in Docker)
 
@@ -1014,12 +1018,13 @@ Support for **free5GC** and **Open5GS** core networks is planned for future rele
 
 1. **Launch your OAI 5G core network**:
    ```bash
-   cd path/demo/oai_setup
+   cd path/core_network_setup/oai
    docker compose up -d
    ```
 
 2. **Launch gNB and UE containers** (without starting the radio processes):
    ```bash
+   cd path/demo/oai
    docker compose -f docker-compose-gNB.yml up -d
    docker compose -f docker-compose-ue.yml up -d
    ```

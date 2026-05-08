@@ -64,7 +64,7 @@ jobs:
 
       - name: Start OAI Core Network
         run: |
-          cd demo_containerized/oai_setup
+          cd core_network_setup/oai
           docker compose up -d
           ./wait_for_core_network.sh
 
@@ -115,6 +115,6 @@ jobs:
           docker compose -f docker-compose-test-simulation.yml down || true
           docker stop ue_turtlebot oai-gNB1 2>/dev/null || true
           docker rm ue_turtlebot oai-gNB1 2>/dev/null || true
-          cd "${{ github.workspace }}/demo_containerized/oai_setup"
+          cd "${{ github.workspace }}/core_network_setup/oai"
           docker compose down || true
           docker network rm ros_gz_net 2>/dev/null || true

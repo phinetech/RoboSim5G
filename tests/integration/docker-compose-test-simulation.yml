@@ -13,6 +13,7 @@ services:
             - IGN_PARTITION=domain1
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
+            - ${DEMO_PROJECT_PATH}/oai:/app/oai
         stdin_open: true
         tty: true
         networks:

@@ -39,7 +39,6 @@ void gNBPowerPlugin::LoadConfig(const tinyxml2::XMLElement *_pluginElem) {
 	if (name_elem != nullptr && name_elem->GetText() != nullptr) {
 	    container_name = QString::fromStdString(name_elem->GetText());
 	}
-
     }
 }
 

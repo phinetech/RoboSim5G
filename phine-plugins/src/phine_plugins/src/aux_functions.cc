@@ -90,13 +90,113 @@ void RoboSimLogger::Log(LogLevel level, const std::string &message) {
 	      << "\033[0m" << std::endl;
 }
 
+// --- yaml-cpp helper functions ---
+
+std::vector<std::string> read_file_lines(const std::string &file_path) {
+    std::vector<std::string> lines;
+    std::ifstream file_in(file_path);
+    if (!file_in) {
+	RoboSimLogger::Log(LogLevel::ERR,
+			   "Error opening file for reading: " + file_path);
+	return lines;
+    }
+    std::string line;
+    while (std::getline(file_in, line)) {
+	lines.push_back(line);
+    }
+    file_in.close();
+    return lines;
+}
+
+void write_file_lines(const std::string &file_path,
+		      const std::vector<std::string> &lines) {
+    std::ofstream file_out(file_path, std::ios::trunc);
+    if (!file_out) {
+	RoboSimLogger::Log(LogLevel::ERR,
+			   "Error opening file for writing: " + file_path);
+	return;
+    }
+    for (const auto &l : lines) {
+	file_out << l << "\n";
+    }
+    file_out.close();
+}
+
+static int find_yaml_key_line_impl(const YAML::Node &node,
+				   const std::string &key, int occurrence,
+				   int &count) {
+    if (node.IsMap()) {
+	for (auto it = node.begin(); it != node.end(); ++it) {
+	    std::string node_key;
+	    try {
+		node_key = it->first.as<std::string>();
+	    } catch (...) {
+		continue;
+	    }
+	    if (node_key == key) {
+		count++;
+		if (count == occurrence) {
+		    return it->first.Mark().line;
+		}
+	    }
+	    // Recurse into child value
+	    int result =
+		find_yaml_key_line_impl(it->second, key, occurrence, count);
+	    if (result >= 0) {
+		return result;
+	    }
+	}
+    } else if (node.IsSequence()) {
+	for (size_t i = 0; i < node.size(); ++i) {
+	    int result =
+		find_yaml_key_line_impl(node[i], key, occurrence, count);
+	    if (result >= 0) {
+		return result;
+	    }
+	}
+    }
+    return -1;
+}
+
+int find_yaml_key_line(const YAML::Node &node, const std::string &key,
+		       int occurrence) {
+    int count = 0;
+    return find_yaml_key_line_impl(node, key, occurrence, count);
+}
+
+bool find_yaml_value_node(const YAML::Node &node, const std::string &key,
+			  YAML::Node &result) {
+    if (node.IsMap()) {
+	for (auto it = node.begin(); it != node.end(); ++it) {
+	    std::string node_key;
+	    try {
+		node_key = it->first.as<std::string>();
+	    } catch (...) {
+		continue;
+	    }
+	    if (node_key == key) {
+		result = it->second;
+		return true;
+	    }
+	    if (find_yaml_value_node(it->second, key, result)) {
+		return true;
+	    }
+	}
+    } else if (node.IsSequence()) {
+	for (size_t i = 0; i < node.size(); ++i) {
+	    if (find_yaml_value_node(node[i], key, result)) {
+		return true;
+	    }
+	}
+    }
+    return false;
+}
+
 /**
  * @brief Modifies the value associated with a specified key in a file.
  *
- * This function searches for a line in the file at `file_path` that contains
- * the given `key` followed by a colon and a value, and replaces the value with
- * `new_value`. The function preserves the original indentation of the matched
- * line. If `debug` is true, debug messages are logged.
+ * This function uses yaml-cpp to parse the YAML file, find the target key,
+ * and then performs a line-based edit to preserve comments and formatting.
  *
  * @param file_path The path to the file to be modified.
  * @param key The key whose value should be modified.
@@ -105,56 +205,40 @@ void RoboSimLogger::Log(LogLevel level, const std::string &message) {
  */
 void modify_dockerC(const std::string &file_path, const std::string &key,
 		    const std::string &new_value, bool debug) {
-    // Open the file for reading
-    std::ifstream file_in(file_path);
-    if (!file_in) {
+    YAML::Node root;
+    try {
+	root = YAML::LoadFile(file_path);
+    } catch (const YAML::Exception &e) {
 	RoboSimLogger::Log(LogLevel::ERR,
-			   "Error opening file for reading: " + file_path);
+			   "Error parsing YAML file: " + file_path + " - " +
+			       std::string(e.what()));
 	return;
     }
 
-    std::stringstream modified_content;
-    std::string line;
-
-    // Create a regex pattern to match the key followed by a colon and its value
-    std::string regex_pattern = R"(\b)" + key + R"(\b\s*:\s*\S+)";
-
-    // Iterate through each line of the file
-    while (std::getline(file_in, line)) {
-	std::regex pattern(regex_pattern);
-
-	// Check if the line matches the pattern
-	if (std::regex_search(line, pattern)) {
-	    if (debug) {
-		RoboSimLogger::Log(LogLevel::DEBUG, "Matched Line: " + line);
-	    }
-
-	    std::smatch match;
-	    // Capture leading whitespace and optional YAML list marker (- )
-	    if (std::regex_search(line, match,
-				  std::regex(R"(^(\s*)(-\s*)?)"))) {
-		std::string prefix = match.str(0);
-		// Replace the key's value with the new value, preserving prefix
-		line = prefix + key + " : " + new_value;
-	    }
-	}
-
-	// Append the (modified or unmodified) line to the output content
-	modified_content << line << "\n";
-    }
-
-    file_in.close();
-
-    // Open the file for writing and overwrite it with the modified content
-    std::ofstream file_out(file_path, std::ios::trunc);
-    if (!file_out) {
-	RoboSimLogger::Log(LogLevel::ERR,
-			   "Error opening file for writing: " + file_path);
+    int line_num = find_yaml_key_line(root, key);
+    if (line_num < 0) {
+	RoboSimLogger::Log(LogLevel::ERR, "Key not found in YAML: " + key +
+					      " in file: " + file_path);
 	return;
     }
 
-    file_out << modified_content.str();
-    file_out.close();
+    std::vector<std::string> lines = read_file_lines(file_path);
+    if (lines.empty()) {
+	return;
+    }
+
+    std::string &target = lines[line_num];
+    if (debug) {
+	RoboSimLogger::Log(LogLevel::DEBUG, "Matched Line: " + target);
+    }
+
+    size_t colon_pos = target.find(':');
+    if (colon_pos != std::string::npos) {
+	std::string prefix = target.substr(0, colon_pos + 1);
+	target = prefix + " " + new_value;
+    }
+
+    write_file_lines(file_path, lines);
 
     if (debug) {
 	RoboSimLogger::Log(LogLevel::DEBUG, "File modified successfully.");
@@ -164,95 +248,104 @@ void modify_dockerC(const std::string &file_path, const std::string &key,
 /**
  * @brief Modifies or comments a YAML configuration line based on the value.
  *
- * This function handles conditional commenting of YAML configuration lines:
- * - If new_value is "no", the line containing the key is commented out with '#'.
- * - If new_value is not "no", the line is uncommented (if needed) and the value is set.
+ * Uses yaml-cpp to find the key in the YAML tree. If the key exists:
+ * - If new_value is "no", the line is commented out with '#'.
+ * - If new_value is not "no", the value is updated.
+ * If the key doesn't exist (already commented out):
+ * - If new_value is not "no", searches for the commented line and uncomments
+ * it.
  *
  * @param file_path The path to the Docker configuration file to be modified.
- * @param key The key whose value should be updated or commented in the configuration file.
- * @param new_value The new value to assign to the specified key, or "no" to comment the line.
- * @param debug If true, enables debug output for tracing the modification process.
+ * @param key The key whose value should be updated or commented in the
+ * configuration file.
+ * @param new_value The new value to assign to the specified key, or "no" to
+ * comment the line.
+ * @param debug If true, enables debug output for tracing the modification
+ * process.
  */
 void modify_or_comment_dockerC(const std::string &file_path,
 			       const std::string &key,
 			       const std::string &new_value, bool debug) {
-    // Open the file for reading
-    std::ifstream file_in(file_path);
-    if (!file_in) {
+    YAML::Node root;
+    try {
+	root = YAML::LoadFile(file_path);
+    } catch (const YAML::Exception &e) {
 	RoboSimLogger::Log(LogLevel::ERR,
-			   "Error opening file for reading: " + file_path);
+			   "Error parsing YAML file: " + file_path + " - " +
+			       std::string(e.what()));
 	return;
     }
 
-    std::stringstream modified_content;
-    std::string line;
+    std::vector<std::string> lines = read_file_lines(file_path);
+    if (lines.empty()) {
+	return;
+    }
 
-    // Create a regex pattern to match the key (possibly commented)
-    // Match: optional spaces, optional comment (#), optional spaces, key, colon, value
-    std::string regex_pattern = R"(^(\s*)(#\s*)?(\b)" + key + R"(\b\s*:\s*\S+))";
+    int line_num = find_yaml_key_line(root, key);
 
-    // Iterate through each line of the file
-    while (std::getline(file_in, line)) {
-	std::regex pattern(regex_pattern);
+    if (line_num >= 0) {
+	// Key exists in YAML tree
+	std::string &target = lines[line_num];
+	if (debug) {
+	    RoboSimLogger::Log(LogLevel::DEBUG, "Matched Line: " + target);
+	}
 
-	// Check if the line matches the pattern (commented or not)
-	if (std::regex_search(line, pattern)) {
-	    if (debug) {
-		RoboSimLogger::Log(LogLevel::DEBUG, "Matched Line: " + line);
+	if (new_value == "no") {
+	    // Comment out the line
+	    size_t first_non_space = target.find_first_not_of(" \t");
+	    if (first_non_space != std::string::npos) {
+		target.insert(first_non_space, "# ");
 	    }
-
-	    std::smatch match;
-	    // Capture leading whitespace and optional YAML list marker (- )
-	    if (std::regex_search(
-		    line, match,
-		    std::regex(R"(^(\s*)(-\s*)?(#\s*)?(.*)$)"))) {
-		std::string leading_space = match.str(1);
-		std::string list_marker = match.str(2);
-
-		if (new_value == "no") {
-		    // Comment out the line
-		    // Remove existing comment if present, then add it back
-		    std::string uncommented_line = line;
-		    // Remove leading whitespace and comment
-		    uncommented_line = std::regex_replace(
-			uncommented_line, std::regex(R"(^\s*#\s*)"), "");
-		    // Re-add proper spacing and comment
-		    line = leading_space + list_marker + "# " + key + " : " +
-			   "<value>";
+	    if (debug) {
+		RoboSimLogger::Log(LogLevel::DEBUG,
+				   "Commenting out line: " + target);
+	    }
+	} else {
+	    // Modify the value
+	    size_t colon_pos = target.find(':');
+	    if (colon_pos != std::string::npos) {
+		std::string prefix = target.substr(0, colon_pos + 1);
+		target = prefix + " " + new_value;
+	    }
+	    if (debug) {
+		RoboSimLogger::Log(LogLevel::DEBUG, "Setting value: " + target);
+	    }
+	}
+    } else {
+	// Key not found in YAML tree (might be commented out)
+	if (new_value != "no") {
+	    // Search for a commented line containing the key
+	    for (size_t i = 0; i < lines.size(); ++i) {
+		const std::string &line = lines[i];
+		size_t first_non_space = line.find_first_not_of(" \t");
+		if (first_non_space == std::string::npos ||
+		    line[first_non_space] != '#') {
+		    continue;
+		}
+		// This is a commented line, check if it contains the key
+		std::string after_comment = line.substr(first_non_space + 1);
+		size_t key_start = after_comment.find_first_not_of(" \t");
+		if (key_start == std::string::npos) {
+		    continue;
+		}
+		std::string key_part = after_comment.substr(key_start);
+		if (key_part.find(key) == 0) {
+		    // Found the commented key - uncomment and set value
+		    std::string indent = line.substr(0, first_non_space);
+		    lines[i] = indent + key + " : " + new_value;
 		    if (debug) {
-			RoboSimLogger::Log(
-			    LogLevel::DEBUG,
-			    "Commenting out line: " + line);
+			RoboSimLogger::Log(LogLevel::DEBUG,
+					   "Uncommenting and setting: " +
+					       lines[i]);
 		    }
-		} else {
-		    // Uncomment and set the value
-		    line = leading_space + list_marker + key + " : " +
-			   new_value;
-		    if (debug) {
-			RoboSimLogger::Log(
-			    LogLevel::DEBUG,
-			    "Setting value: " + line);
-		    }
+		    break;
 		}
 	    }
 	}
-
-	// Append the (modified or unmodified) line to the output content
-	modified_content << line << "\n";
+	// If new_value == "no" and key is already commented, nothing to do
     }
 
-    file_in.close();
-
-    // Open the file for writing and overwrite it with the modified content
-    std::ofstream file_out(file_path, std::ios::trunc);
-    if (!file_out) {
-	RoboSimLogger::Log(LogLevel::ERR,
-			   "Error opening file for writing: " + file_path);
-	return;
-    }
-
-    file_out << modified_content.str();
-    file_out.close();
+    write_file_lines(file_path, lines);
 
     if (debug) {
 	RoboSimLogger::Log(LogLevel::DEBUG, "File modified successfully.");
@@ -343,86 +436,51 @@ void modify_conf(const std::string &file_path, const std::string &key,
  * @brief Modifies a specific key in a file, replacing it with a new key while
  * preserving its value.
  *
- * This function searches for lines in the specified file that contain the given
- * `old_key` followed by a colon, and replaces the key with `new_key`, keeping
- * any associated value intact. The function preserves indentation and only
- * updates lines where the key matches exactly. The modified content is written
- * back to the original file.
+ * Uses yaml-cpp to find the key in the YAML tree, then performs a targeted
+ * text replacement on the line to rename the key while preserving formatting.
  *
  * @param file_path The path to the file to be modified.
  * @param old_key The key to search for and replace.
  * @param new_key The new key to use as a replacement.
  * @param debug If true, debug messages will be logged during processing.
- *
- * @note If the file cannot be opened for reading or writing, an error is logged
- * and the function returns early.
  */
 void modify_service_name(const std::string &file_path,
 			 const std::string &old_key, const std::string &new_key,
 			 bool debug) {
-    std::ifstream file_in(file_path);
-    if (!file_in) {
+    YAML::Node root;
+    try {
+	root = YAML::LoadFile(file_path);
+    } catch (const YAML::Exception &e) {
 	RoboSimLogger::Log(LogLevel::ERR,
-			   "Error opening file for reading: " + file_path);
+			   "Error parsing YAML file: " + file_path + " - " +
+			       std::string(e.what()));
 	return;
     }
 
-    std::stringstream modified_content;
-    std::string line;
-
-    // Create a regex pattern to find the old_key followed by a colon and
-    // optional spaces or value
-    std::string regex_pattern =
-	R"(\b)" + old_key +
-	R"(\b\s*:\s*)"; // Matches `old_key:` with optional spaces after it
-
-    // Iterate over each line of the file
-    while (std::getline(file_in, line)) {
-	std::regex pattern(regex_pattern);
-
-	// If the line contains the old_key: (with or without value)
-	if (std::regex_search(line, pattern)) {
-	    if (debug) {
-		RoboSimLogger::Log(LogLevel::DEBUG, "Matched Line: " + line);
-	    }
-
-	    // Search for the key in the line and ensure it matches the old_key
-	    std::smatch match;
-	    if (std::regex_search(line, match, std::regex(R"(^\s*)"))) {
-		std::string indentation =
-		    match.str(0); // Capture leading whitespace
-
-		// If there is a value after the colon, retain the value.
-		// Otherwise, keep it empty.
-		size_t pos = line.find(":");
-		std::string value = "";
-		if (pos != std::string::npos && pos + 1 < line.size()) {
-		    value = line.substr(pos + 1); // Extract value if present
-		}
-
-		// If there's no value, ensure we just have `new_key:`
-		line = indentation + new_key + " :" +
-		       value; // Update the key while preserving any value
-	    }
-	}
-
-	// Append the line (modified or not) to the output string
-	modified_content << line << "\n";
-    }
-
-    file_in.close();
-
-    // Open the file in write mode to overwrite it with the modified content
-    std::ofstream file_out(file_path, std::ios::trunc);
-    if (!file_out) {
-	RoboSimLogger::Log(LogLevel::ERR,
-			   "Error opening file for writing: " + file_path);
+    int line_num = find_yaml_key_line(root, old_key);
+    if (line_num < 0) {
+	RoboSimLogger::Log(LogLevel::ERR, "Key not found in YAML: " + old_key +
+					      " in file: " + file_path);
 	return;
     }
 
-    // Write the modified content back to the file
-    file_out << modified_content.str();
-    file_out.close();
+    std::vector<std::string> lines = read_file_lines(file_path);
+    if (lines.empty()) {
+	return;
+    }
+
+    std::string &target = lines[line_num];
+    if (debug) {
+	RoboSimLogger::Log(LogLevel::DEBUG, "Matched Line: " + target);
+    }
+
+    // Replace the old key name with the new key name on this line
+    size_t key_pos = target.find(old_key);
+    if (key_pos != std::string::npos) {
+	target.replace(key_pos, old_key.length(), new_key);
+    }
+
+    write_file_lines(file_path, lines);
 
     if (debug) {
 	RoboSimLogger::Log(LogLevel::DEBUG, "File modified successfully.");
@@ -672,54 +730,44 @@ bool GetOptionalParamFromSDF(sdf::ElementPtr sdfClone,
 void modify_dockerC_nth(const std::string &file_path, const std::string &key,
 			const std::string &new_value, int occurrence,
 			bool debug) {
-    std::ifstream file_in(file_path);
-    if (!file_in) {
+    YAML::Node root;
+    try {
+	root = YAML::LoadFile(file_path);
+    } catch (const YAML::Exception &e) {
 	RoboSimLogger::Log(LogLevel::ERR,
-			   "Error opening file for reading: " + file_path);
+			   "Error parsing YAML file: " + file_path + " - " +
+			       std::string(e.what()));
 	return;
     }
 
-    std::stringstream modified_content;
-    std::string line;
-    int match_count = 0;
-
-    std::string regex_pattern = R"(\b)" + key + R"(\b\s*:\s*\S+)";
-
-    while (std::getline(file_in, line)) {
-	std::regex pattern(regex_pattern);
-
-	if (std::regex_search(line, pattern)) {
-	    match_count++;
-	    if (match_count == occurrence) {
-		if (debug) {
-		    RoboSimLogger::Log(LogLevel::DEBUG,
-				       "Matched Line (occurrence " +
-					   std::to_string(occurrence) +
-					   "): " + line);
-		}
-
-		std::smatch match;
-		if (std::regex_search(line, match, std::regex(R"(^\s*)"))) {
-		    std::string indentation = match.str(0);
-		    line = indentation + key + " : " + new_value;
-		}
-	    }
-	}
-
-	modified_content << line << "\n";
-    }
-
-    file_in.close();
-
-    std::ofstream file_out(file_path, std::ios::trunc);
-    if (!file_out) {
-	RoboSimLogger::Log(LogLevel::ERR,
-			   "Error opening file for writing: " + file_path);
+    int line_num = find_yaml_key_line(root, key, occurrence);
+    if (line_num < 0) {
+	RoboSimLogger::Log(LogLevel::ERR, "Key not found (occurrence " +
+					      std::to_string(occurrence) +
+					      "): " + key +
+					      " in file: " + file_path);
 	return;
     }
 
-    file_out << modified_content.str();
-    file_out.close();
+    std::vector<std::string> lines = read_file_lines(file_path);
+    if (lines.empty()) {
+	return;
+    }
+
+    std::string &target = lines[line_num];
+    if (debug) {
+	RoboSimLogger::Log(LogLevel::DEBUG, "Matched Line (occurrence " +
+						std::to_string(occurrence) +
+						"): " + target);
+    }
+
+    size_t colon_pos = target.find(':');
+    if (colon_pos != std::string::npos) {
+	std::string prefix = target.substr(0, colon_pos + 1);
+	target = prefix + " " + new_value;
+    }
+
+    write_file_lines(file_path, lines);
 
     if (debug) {
 	RoboSimLogger::Log(LogLevel::DEBUG, "File modified successfully.");
@@ -729,57 +777,58 @@ void modify_dockerC_nth(const std::string &file_path, const std::string &key,
 void modify_yaml_list_entry(const std::string &file_path,
 			    const std::string &parent_key,
 			    const std::string &new_value, bool debug) {
-    std::ifstream file_in(file_path);
-    if (!file_in) {
+    YAML::Node root;
+    try {
+	root = YAML::LoadFile(file_path);
+    } catch (const YAML::Exception &e) {
 	RoboSimLogger::Log(LogLevel::ERR,
-			   "Error opening file for reading: " + file_path);
+			   "Error parsing YAML file: " + file_path + " - " +
+			       std::string(e.what()));
 	return;
     }
 
-    std::stringstream modified_content;
-    std::string line;
-    bool found_parent = false;
-
-    std::string parent_pattern_str = R"(\b)" + parent_key + R"(\b\s*:\s*$)";
-    std::regex parent_pattern(parent_pattern_str);
-    std::regex list_item_pattern(R"(^(\s*)-\s*.+)");
-
-    while (std::getline(file_in, line)) {
-	if (found_parent) {
-	    std::smatch match;
-	    if (std::regex_search(line, match, list_item_pattern)) {
-		if (debug) {
-		    RoboSimLogger::Log(LogLevel::DEBUG,
-				       "Replacing list item: " + line);
-		}
-		std::string indentation = match.str(1);
-		line = indentation + "- " + new_value;
-		found_parent = false;
-	    }
-	}
-
-	if (std::regex_search(line, parent_pattern)) {
-	    found_parent = true;
-	    if (debug) {
-		RoboSimLogger::Log(LogLevel::DEBUG,
-				   "Found parent key: " + line);
-	    }
-	}
-
-	modified_content << line << "\n";
-    }
-
-    file_in.close();
-
-    std::ofstream file_out(file_path, std::ios::trunc);
-    if (!file_out) {
+    // Find the value node for the parent key (should be a sequence)
+    YAML::Node list_node;
+    if (!find_yaml_value_node(root, parent_key, list_node)) {
 	RoboSimLogger::Log(LogLevel::ERR,
-			   "Error opening file for writing: " + file_path);
+			   "Parent key not found: " + parent_key +
+			       " in file: " + file_path);
 	return;
     }
 
-    file_out << modified_content.str();
-    file_out.close();
+    if (!list_node.IsSequence() || list_node.size() == 0) {
+	RoboSimLogger::Log(LogLevel::ERR,
+			   "Key " + parent_key +
+			       " is not a non-empty sequence in: " + file_path);
+	return;
+    }
+
+    // Get the line number of the first list element
+    int line_num = list_node[0].Mark().line;
+    if (line_num < 0) {
+	RoboSimLogger::Log(LogLevel::ERR,
+			   "Could not determine line for list entry under: " +
+			       parent_key);
+	return;
+    }
+
+    std::vector<std::string> lines = read_file_lines(file_path);
+    if (lines.empty()) {
+	return;
+    }
+
+    std::string &target = lines[line_num];
+    if (debug) {
+	RoboSimLogger::Log(LogLevel::DEBUG, "Replacing list item: " + target);
+    }
+
+    // Find the "- " marker and replace the value after it
+    size_t dash_pos = target.find("- ");
+    if (dash_pos != std::string::npos) {
+	target = target.substr(0, dash_pos + 2) + new_value;
+    }
+
+    write_file_lines(file_path, lines);
 
     if (debug) {
 	RoboSimLogger::Log(LogLevel::DEBUG, "File modified successfully.");

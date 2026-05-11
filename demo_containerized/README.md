@@ -6,6 +6,8 @@
 
 - `mongodb-mongosh` (required only for Open5GS core network — install with `sudo apt install mongodb-mongosh`)
 
+- `nvidia-container-toolkit` (required only if you want to use GPU acceleration for the Gazebo simulation — install following the [NVIDIA Container Toolkit install guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html))
+
 ## Choosing a Core Network
 
 RoboSim5G supports **three 5G Core Network implementations**: OAI, free5GC, and Open5GS.

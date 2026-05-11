@@ -27,6 +27,7 @@ limitations under the License.*/
 #include <sstream>
 #include <string>
 #include <vector>
+#include <yaml-cpp/yaml.h>
 
 // Enum for log levels
 enum class LogLevel { DEBUG, WARN, ERR, INFO };
@@ -108,15 +109,21 @@ void modify_dockerC(const std::string &file_path, const std::string &key,
  * @brief Modifies or comments a YAML configuration line based on the value.
  *
  * This function handles conditional commenting of YAML configuration lines:
- * - If new_value is "no", the line containing the key is commented out with '#'.
- * - If new_value is not "no", the line is uncommented (if needed) and the value is set.
+ * - If new_value is "no", the line containing the key is commented out with
+ * '#'.
+ * - If new_value is not "no", the line is uncommented (if needed) and the value
+ * is set.
  *
  * @param file_path The path to the Docker configuration file to be modified.
- * @param key The key whose value should be updated or commented in the configuration file.
- * @param new_value The new value to assign to the specified key, or "no" to comment the line.
- * @param debug If true, enables debug output for tracing the modification process.
+ * @param key The key whose value should be updated or commented in the
+ * configuration file.
+ * @param new_value The new value to assign to the specified key, or "no" to
+ * comment the line.
+ * @param debug If true, enables debug output for tracing the modification
+ * process.
  */
-void modify_or_comment_dockerC(const std::string &file_path, const std::string &key,
+void modify_or_comment_dockerC(const std::string &file_path,
+			       const std::string &key,
 			       const std::string &new_value, bool debug);
 
 /**
@@ -261,5 +268,41 @@ void modify_dockerC_nth(const std::string &file_path, const std::string &key,
 void modify_yaml_list_entry(const std::string &file_path,
 			    const std::string &parent_key,
 			    const std::string &new_value, bool debug);
+
+// --- yaml-cpp helpers for YAML file manipulation ---
+
+/**
+ * @brief Reads all lines from a file into a vector.
+ */
+std::vector<std::string> read_file_lines(const std::string &file_path);
+
+/**
+ * @brief Writes a vector of lines back to a file.
+ */
+void write_file_lines(const std::string &file_path,
+		      const std::vector<std::string> &lines);
+
+/**
+ * @brief Recursively searches a YAML tree for a key and returns its line
+ * number.
+ *
+ * @param node The YAML node to search.
+ * @param key The key name to find.
+ * @param occurrence Which occurrence to find (1-based). Default is 1.
+ * @return The 0-based line number of the key, or -1 if not found.
+ */
+int find_yaml_key_line(const YAML::Node &node, const std::string &key,
+		       int occurrence = 1);
+
+/**
+ * @brief Recursively searches a YAML tree for a key and returns the value node.
+ *
+ * @param node The YAML node to search.
+ * @param key The key name to find.
+ * @param result Output: the value node associated with the key.
+ * @return true if the key was found.
+ */
+bool find_yaml_value_node(const YAML::Node &node, const std::string &key,
+			  YAML::Node &result);
 
 #endif // AUX_FUNCTIONS_HH

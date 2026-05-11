@@ -8,128 +8,105 @@
 
 - ros-gz pkg
 
+- `mongodb-mongosh` (required only for Open5GS core network — install with `sudo apt install mongodb-mongosh`)
+
 ## Choosing a Core Network
 
-RoboSim5G supports **three 5G Core Network implementations**. Each has its own launch and kill scripts:
+RoboSim5G supports **three 5G Core Network implementations**: OAI, free5GC, and Open5GS.
 
-| Core Network | Launch Script | Kill Script |
-|--------------|--------------|-------------|
-| **OAI** (OpenAirInterface) | `launch_robot_5G.sh` | `kill_all.sh` |
-| **free5GC** | `launch_robot_5G_free5gc.sh` | `kill_all_free5gc.sh` |
-| **Open5GS** | `launch_robot_5G_open5gs.sh` | `kill_all_open5gs.sh` |
+A single `launch.sh` and `kill.sh` script is provided. You select the core network using the `CORE_NETWORK` environment variable (defaults to `oai`):
 
-**Important:** When you choose a core network, you must also **configure the corresponding Gazebo world file** (see [Configuring Gazebo World for Your CN](#configuring-gazebo-world-for-your-cn) section below).
+```bash
+CORE_NETWORK=oai       ./launch.sh   # OpenAirInterface (default)
+CORE_NETWORK=free5gc   ./launch.sh   # free5GC
+CORE_NETWORK=open5gs   ./launch.sh   # Open5GS
+```
 
-**Key Difference - free5GC N3 Interface:**
+The core network containers are launched from the `core_network_setup/` folder at the root of the repository. Each CN has its own subfolder (`core_network_setup/oai/`, `core_network_setup/free5gc/`, `core_network_setup/open5gs/`) containing the docker-compose file and related configuration.
+
+**Key Difference — free5GC N3 Interface:**
 free5GC uses a **separate N3 network** (`demo-n3` bridge) for the gNB ↔ UPF GTP-U tunnel, while OAI and Open5GS use the main `phine-net` for all communication.
 
 📖 **For detailed comparison and guidance on choosing:** See [doc/5G_CORE_NETWORKS.md](../doc/5G_CORE_NETWORKS.md)
 
+### Open5GS: UE Subscriber Registration
+
+When using Open5GS, the launch script automatically calls `core_network_setup/open5gs/scripts/add_ue_subscriber.sh` to register the UE in the Open5GS MongoDB database. This script uses the `open5gs-dbctl` tool (included in the repo) which requires `mongosh` to be installed on the host.
+
+Install the prerequisite:
+```bash
+sudo apt install mongodb-mongosh
+```
+
+### Automatic World Selection
+
+The Gazebo world file is **automatically selected** based on the `CORE_NETWORK` environment variable. The launch file (`gazebo_launch/src/ign_turtlebot/launch/gazebo_launch.launch.py`) reads the `CORE_NETWORK` variable and loads the corresponding world file (`world_only_oai.sdf`, `world_only_free5gc.sdf`, or `world_only_open5gs.sdf`). No manual editing of the launch file or rebuilding is required when switching between core networks.
+
+### RAN Docker Compose Structure
+
+The `oai/` folder in this demo contains the docker-compose files for the Radio Access Network components. The folder is named `oai/` because the gNB and UE are from **OAI v2026.w04** (`oaisoftwarealliance/oai-gnb:2026.w04`), used with all three core networks:
+
+- `docker-compose-gNB.yml` — Base gNB compose file, used for **all** core networks
+- `docker-compose-gNB.free5gc.yml` — Docker Compose **extension** for free5GC only (adds the N3 network interface to the gNB)
+- `docker-compose-ue.yml` — UE, RCC, and DDS Discovery Server containers
+- `conf/gNB_config.yaml` — gNB configuration (modified at runtime by the Gazebo gNB plugin)
+- `conf/UE_config.yaml` — UE configuration (modified at runtime by the Gazebo UE plugin)
+
 ## Changing Plugin path
 
-In `launch_robot_5G` at line 4 you have to change the path to Gazebo Plugin to your own (sometimes it can be in /usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins )
-## Builiding Images ad building ROS2 pkgs
-On a terminal in the main repo directory:
+In `launch.sh` you can change the `IGN_GAZEBO_SYSTEM_PLUGIN_PATH` variable to point to your Gazebo plugin path (sometimes it can be in /usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins).
+
+## Building Images and ROS2 pkgs
+On a terminal in the demo directory:
 
 ```
 ./build_images.sh
 ```
+
+This will build the `gazebo_launch` ROS2 workspace (colcon build), and the `dds_discovery_server` and `rcc` Docker images. The `ue_amr` Docker image is built automatically by the UE plugin at simulation runtime.
+
 ## Running simulation
 
-1. On a terminal, launch the script for your chosen core network:
+1. On a terminal, launch the simulation with your chosen core network:
 
-**For OAI:**
 ```bash
-source launch_robot_5G.sh
+CORE_NETWORK=oai source launch.sh
 ```
 
-**For free5GC:**
-```bash
-source launch_robot_5G_free5gc.sh
-```
-
-**For Open5GS:**
-```bash
-source launch_robot_5G_open5gs.sh
-```
+(Replace `oai` with `free5gc` or `open5gs` as needed. If `CORE_NETWORK` is not set, it defaults to `oai`.)
 
 Insert your password when required.
 
-These commands will launch the CN container, the Gazebo Simulation with the gNB embedded (visualization + container), the robot-UE container, and the RCC container. It will take 40 seconds to start everything, finishing when Rviz opens.
-The first time you launch the simulation, it might fail since the UE plugin will build the robot-UE plugin for a long time.
+This command will launch the CN containers (from `core_network_setup/`), the Gazebo Simulation with the gNB embedded (visualization + container), the robot-UE container, and the RCC container. It will take 40 seconds to start everything, finishing when Rviz opens.
+The first time you launch the simulation, it might fail since the UE plugin will build the robot-UE image for a long time.
 
 2. On Rviz click on "Nav2 goal" and then select a feasible location.
 
-3. Whenever you want, look for the three vertical dot on the top right of Gazebo GUI, click it and in the search box of Gazebo search "UE_Power_Plugin" and "gNB_Power_Plugin". In the Gazebo GUI two buttons will pop up, that will switch on or off the UE and gNB of the robot.
+3. Whenever you want, look for the three vertical dots on the top right of Gazebo GUI, click it and in the search box of Gazebo search "UE_Power_Plugin" and "gNB_Power_Plugin". In the Gazebo GUI two buttons will pop up, that will switch on or off the UE and gNB of the robot.
 
 4. Press the gNB button, that will switch both gNB and UE off.
 
-5. The robot will continue its path (or it will stay still if he does not have one), you can try to give another goal but the communication won't be enabled
+5. The robot will continue its path (or it will stay still if it does not have one), you can try to give another goal but the communication won't be enabled.
 
-6. Switch on the UE and gNB from the buttons
+6. Switch on the UE and gNB from the buttons.
 
-7. Give another Nav2 Goal or wait for the robot to finish its path
+7. Give another Nav2 Goal or wait for the robot to finish its path.
 
-## Remove all the container and kill gazebo
+## Remove all the containers and kill Gazebo
 
-In the main folder, use the kill script for your chosen core network:
+In the demo folder, run the kill script with the same `CORE_NETWORK` value:
 
-**For OAI:**
 ```bash
-./kill_all.sh
-```
-
-**For free5GC:**
-```bash
-./kill_all_free5gc.sh
-```
-
-**For Open5GS:**
-```bash
-./kill_all_open5gs.sh
-```
-
-## Configuring Gazebo World for Your CN
-
-**IMPORTANT:** The Gazebo world file must match your chosen core network. Each CN requires different configurations (IMSI, DNN, network addresses, etc.).
-
-### Available World Files
-
-Three world files are provided in `gazebo_launch/src/ign_turtlebot/worlds/`:
-
-- `world_only.sdf` - **For OAI**
-- `world_only_free5gc.sdf` - **For free5GC**
-- `world_only_open5gs.sdf` - **For Open5GS**
-
-### Configure the Launch File
-
-Edit `gazebo_launch/src/ign_turtlebot/launch/gazebo_launch.launch.py` at **line 68**:
-
-```python
-# Change this line to match your chosen CN:
-world = os.path.join(get_package_share_directory('ign_turtlebot'), 
-                     "worlds", "world_only_free5gc.sdf")  # Change filename here
-```
-
-**Examples:**
-- For OAI: `"world_only.sdf"`
-- For free5GC: `"world_only_free5gc.sdf"`
-- For Open5GS: `"world_only_open5gs.sdf"`
-
-After changing the world file, rebuild the workspace:
-```bash
-cd gazebo_launch
-colcon build
-source install/setup.bash
+CORE_NETWORK=oai ./kill.sh
 ```
 
 ## Modify gNB parameters
 
-Inside the world file for your chosen CN (see [Configuring Gazebo World for Your CN](#configuring-gazebo-world-for-your-cn)), change the parameters at line 106.
+Inside the world file for your chosen CN, change the gNB parameters. The world files are located in `gazebo_launch/src/ign_turtlebot/worlds/`:
 
-**For OAI:** `gazebo_launch/src/ign_turtlebot/worlds/world_only.sdf`
-**For free5GC:** `gazebo_launch/src/ign_turtlebot/worlds/world_only_free5gc.sdf`
-**For Open5GS:** `gazebo_launch/src/ign_turtlebot/worlds/world_only_open5gs.sdf`
+- `world_only_oai.sdf` — For OAI
+- `world_only_free5gc.sdf` — For free5GC
+- `world_only_open5gs.sdf` — For Open5GS
 
 ```xml
 <include>
@@ -150,13 +127,18 @@ Inside the world file for your chosen CN (see [Configuring Gazebo World for Your
 ```
 
 **Note:** The `cn_type` parameter specifies which 5G Core Network the plugin should connect to.
+
+After modifying world files, rebuild the workspace:
+```bash
+cd gazebo_launch
+colcon build
+source install/setup.bash
+```
+
 ## Modify UE parameters
 
-Inside the world file for your chosen CN (see [Configuring Gazebo World for Your CN](#configuring-gazebo-world-for-your-cn)), change the parameters at line 56.
+Inside the world file for your chosen CN (same files as above), change the UE parameters:
 
-**For OAI:** `gazebo_launch/src/ign_turtlebot/worlds/world_only.sdf`
-**For free5GC:** `gazebo_launch/src/ign_turtlebot/worlds/world_only_free5gc.sdf`
-**For Open5GS:** `gazebo_launch/src/ign_turtlebot/worlds/world_only_open5gs.sdf`
 ```xml
 <plugin name="phine_plugins::UE_plugin" filename="UE_plugin">
   <cn_type>oai</cn_type>  <!-- Options: oai, free5gc, open5gs -->
@@ -172,7 +154,6 @@ Inside the world file for your chosen CN (see [Configuring Gazebo World for Your
   <opc>C42449363BBAD02B66D16BC975D77CC1</opc>
   <dnn>oai</dnn>
   <nssai_sst>1</nssai_sst>
-  <nssai_sd>no</nssai_sd>
   <robot_project_path>${PROJECT_PATH}/nav_stack</robot_project_path>
   <robot_project_name>nav_stack</robot_project_name>
   <execute_robot_launch_file>true</execute_robot_launch_file>
@@ -187,57 +168,37 @@ Inside the world file for your chosen CN (see [Configuring Gazebo World for Your
 
 ## Remove CN from launch file
 
-If you want to manage the CN containers separately, you can comment out the CN launch section in your chosen launch script.
+If you want to manage the CN containers separately, you can comment out the CN launch section in `launch.sh`:
 
-**Example for OAI** (`launch_robot_5G.sh`):
 ```sh
-# cd oai_setup
+# cd "$CN_DIR"
 # docker compose up -d
-# cd ..
-```
-
-**Example for free5GC** (`launch_robot_5G_free5gc.sh`):
-```sh
-# cd free5gc_setup
-# docker compose up -d
-# cd ..
-```
-
-**Example for Open5GS** (`launch_robot_5G_open5gs.sh`):
-```sh
-# cd open5gs_setup
-# docker compose up -d
-# cd ..
 ```
 
 ## Changing ROS DOMAIN (avoiding multi-user bugs)
 
-In `launch_robot_5G.sh` modify with the ID that you want(each PC should have its own):
+Set the `ROS_DOMAIN_ID` environment variable before launching (each PC should have its own):
 
+```bash
+ROS_DOMAIN_ID=42 CORE_NETWORK=oai source launch.sh
 ```
 
-export ROS_DOMAIN_ID=ID
+## Changing GZ partition (avoiding multi-user bugs)
 
-```
+Set the `IGN_PARTITION` environment variable before launching (each PC should have its own):
 
-## Changing GZ partion(avoiding multi-user bugs)
-
-In `launch_robot_5G.sh` modify with the partion that you want(each PC should have its own):
-
-```
-
-export IGN_PARTITION=partition_name
-
+```bash
+IGN_PARTITION=my_partition CORE_NETWORK=oai source launch.sh
 ```
 
 ## Using the Button UE and gNB plugin
 
-If you change the container name in the gNB and UE declarations, you should match the same container names for the two environment variable in `launch_robot_5G.sh`: `GNB_NAME_FOR_BUTTON` , `UE_NAME_FOR_BUTTON`.
+If you change the container name in the gNB and UE declarations, you should match the same container names for the two environment variables `GNB_NAME_FOR_BUTTON` and `UE_NAME_FOR_BUTTON` (set before launching or export them).
 
-## Scripts in `launch-robot_5G.sh` 
+## Scripts in `launch.sh`
 
 ### `wait_for_core_network.sh`
-This script ensures that the OAI core network is fully operational before proceeding with the simulation. It waits for the MySQL database container to become healthy and checks that all critical OAI services (`oai-nrf`, `oai-amf`, `oai-smf`, `oai-upf`) are running. The script is called automatically during the simulation launch process to avoid race conditions and ensure a reliable startup sequence.
+Located in `core_network_setup/oai/`, this script ensures that the OAI core network is fully operational before proceeding with the simulation. It waits for the MySQL database container to become healthy and checks that all critical OAI services (`oai-nrf`, `oai-amf`, `oai-smf`, `oai-upf`) are running. The script is called automatically during the simulation launch process to avoid race conditions and ensure a reliable startup sequence.
 
-### `create_physical_bridge.sh`
-This script creates a custom Docker bridge network (`ros_gz_net`) with a specified subnet. It is used to enable communication between simulation containers (such as Gazebo, robot-UE, and network components) on a dedicated network, ensuring proper connectivity and isolation for the simulation environment. The script is executed as part of the launch process and typically does not require manual intervention.
+### `ros_gz_net` bridge creation
+The `launch.sh` script creates a custom Docker bridge network (`ros_gz_net`) with a specified subnet. It is used to enable communication between simulation containers (such as Gazebo, robot-UE, and network components) on a dedicated network, ensuring proper connectivity and isolation for the simulation environment. This is executed as part of the launch process and typically does not require manual intervention.

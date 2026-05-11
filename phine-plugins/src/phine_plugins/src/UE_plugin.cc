@@ -98,8 +98,7 @@ void UE_plugin::Configure(const gz::sim::Entity &_entity,
 	return;
     if (!GetParamFromSDF(sdfClone, "nssai_sst", this->nssai_sst))
 	return;
-    if (!GetParamFromSDF(sdfClone, "nssai_sd", this->nssai_sd))
-	return;
+    GetOptionalParamFromSDF(sdfClone, "nssai_sd", this->nssai_sd, "no");
     if (!GetParamFromSDF(sdfClone, "robot_project_path",
 			 this->robot_project_path))
 	return;
@@ -155,14 +154,15 @@ void UE_plugin::Configure(const gz::sim::Entity &_entity,
 }
 
 void UE_plugin::configureOAI(const char *project_path) {
-    // Define file paths using PROJECT_PATH
+    // Define file paths using PROJECT_PATH (unified location)
     std::string file_path1 =
-	std::string(project_path) + "/oai_setup/docker-compose-ue.yml";
-    std::string file_path2 = std::string(project_path) + "/oai_setup/conf/ue" +
-			     this->robot_id + ".conf";
+	std::string(project_path) + "/oai/docker-compose-ue.yml";
+    // YAML config file (v26 format) — modify UE_config.yaml directly
+    std::string file_path2 =
+	std::string(project_path) + "/oai/conf/UE_config.yaml";
     std::string file_path3 =
-	std::string(project_path) + "/images/ue_amr_oai/dds.xml";
-    std::string file_path4 = std::string(project_path) + "/images/ue_amr_oai";
+	std::string(project_path) + "/images/ue_amr/dds.xml";
+    std::string file_path4 = std::string(project_path) + "/images/ue_amr";
 
     // Replace interface whitelist addresses in DDS XML
     replace_interface_whitelist_addresses(this->subnet_5G, file_path3,
@@ -174,33 +174,20 @@ void UE_plugin::configureOAI(const char *project_path) {
 	" && docker build --build-arg ROBOT_PROJECT_NAME=" +
 	this->robot_project_name +
 	" --build-arg ROS_DISCOVERY_SERVER=" + this->ros_discovery_server +
-	" -t ue_amr_oai " + file_path4;
+	" -t ue_amr " + file_path4;
     system(docker_build_command.c_str());
 
-    // Prepare configuration file modifications for UE
-    const std::string key1 = "imsi";
-    const std::string new_value1 = "\"" + this->imsi + "\";";
-    const std::string key2 = "key";
-    const std::string new_value2 = "\"" + this->key + "\";";
-    const std::string key3 = "opc";
-    const std::string new_value3 = "\"" + this->opc + "\";";
-    const std::string key4 = "dnn";
-    const std::string new_value4 = "\"" + this->dnn + "\";";
-    const std::string key5 = "nssai_sst";
-    const std::string new_value5 = "\"" + this->nssai_sst + "\";";
-    const std::string key6 = "nssai_sd";
-    const std::string new_value6 = "\"" + this->nssai_sd + "\";";
-
-    // Modify UE configuration file with new values
-    modify_conf(file_path2, key1, new_value1, this->debug_logs);
-    modify_conf(file_path2, key2, new_value2, this->debug_logs);
-    modify_conf(file_path2, key3, new_value3, this->debug_logs);
-    modify_conf(file_path2, key4, new_value4, this->debug_logs);
-    modify_conf(file_path2, key5, new_value5, this->debug_logs);
-    modify_conf(file_path2, key6, new_value6, this->debug_logs);
+    // Modify UE YAML configuration file using YAML key: value format
+    modify_dockerC(file_path2, "imsi", this->imsi, this->debug_logs);
+    modify_dockerC(file_path2, "key", this->key, this->debug_logs);
+    modify_dockerC(file_path2, "opc", this->opc, this->debug_logs);
+    modify_dockerC(file_path2, "dnn", this->dnn, this->debug_logs);
+    modify_dockerC(file_path2, "nssai_sst", this->nssai_sst, this->debug_logs);
+    modify_or_comment_dockerC(file_path2, "nssai_sd", this->nssai_sd,
+			      this->debug_logs);
 
     // Compose and run Docker container for UE robot
-    std::string folder_path = std::string(project_path) + "/oai_setup";
+    std::string folder_path = std::string(project_path) + "/oai";
     std::string docker_compose_command =
 	"cd " + folder_path + " && " + "NAME_ROBOT_" + this->robot_id + "=" +
 	this->robot_container_name + " " + "IP_GNB=" + this->ip_gNB + " " +
@@ -212,17 +199,18 @@ void UE_plugin::configureOAI(const char *project_path) {
 	this->robot_launch_file_name + " " + "EXECUTE_ROBOT_LAUNCH_FILE_" +
 	this->robot_id + "=" + this->execute_robot_launch_file + " " +
 	"ROS_DISCOVERY_SERVER=" + this->ros_discovery_server + " " +
+	"UE_CARRIER_FREQ=3619200000 " +
 	"docker compose -f docker-compose-ue.yml up robot_" + this->robot_id +
 	" -d";
     system(docker_compose_command.c_str());
 }
 
 void UE_plugin::configureFree5gc(const char *project_path) {
-    // Define file paths for free5gc setup
+    // Define file paths for free5gc setup (unified location)
     std::string file_path1 =
-	std::string(project_path) + "/free5gc_setup/docker-compose-ue.yml";
+	std::string(project_path) + "/oai/docker-compose-ue.yml";
     std::string file_path2 =
-	std::string(project_path) + "/free5gc_setup/oai/UE_config.yaml";
+	std::string(project_path) + "/oai/conf/UE_config.yaml";
     std::string file_path3 =
 	std::string(project_path) + "/images/ue_amr/dds.xml";
     std::string file_path4 = std::string(project_path) + "/images/ue_amr";
@@ -246,10 +234,11 @@ void UE_plugin::configureFree5gc(const char *project_path) {
     modify_dockerC(file_path2, "opc", this->opc, this->debug_logs);
     modify_dockerC(file_path2, "dnn", this->dnn, this->debug_logs);
     modify_dockerC(file_path2, "nssai_sst", this->nssai_sst, this->debug_logs);
-    modify_dockerC(file_path2, "nssai_sd", this->nssai_sd, this->debug_logs);
+    modify_or_comment_dockerC(file_path2, "nssai_sd", this->nssai_sd,
+			      this->debug_logs);
 
     // Compose and run Docker container for UE robot
-    std::string folder_path = std::string(project_path) + "/free5gc_setup";
+    std::string folder_path = std::string(project_path) + "/oai";
     std::string docker_compose_command =
 	"cd " + folder_path + " && " + "NAME_ROBOT_" + this->robot_id + "=" +
 	this->robot_container_name + " " + "IP_GNB=" + this->ip_gNB + " " +
@@ -261,17 +250,18 @@ void UE_plugin::configureFree5gc(const char *project_path) {
 	this->robot_launch_file_name + " " + "EXECUTE_ROBOT_LAUNCH_FILE_" +
 	this->robot_id + "=" + this->execute_robot_launch_file + " " +
 	"ROS_DISCOVERY_SERVER=" + this->ros_discovery_server + " " +
+	"UE_CARRIER_FREQ=3319680000 " +
 	"docker compose -f docker-compose-ue.yml up robot_" + this->robot_id +
 	" -d";
     system(docker_compose_command.c_str());
 }
 
 void UE_plugin::configureOpen5gs(const char *project_path) {
-    // Define file paths for open5gs setup
+    // Define file paths for open5gs setup (unified location)
     std::string file_path1 =
-	std::string(project_path) + "/open5gs_setup/docker-compose-ue.yml";
+	std::string(project_path) + "/oai/docker-compose-ue.yml";
     std::string file_path2 =
-	std::string(project_path) + "/open5gs_setup/oai/conf/UE_config.yaml";
+	std::string(project_path) + "/oai/conf/UE_config.yaml";
     std::string file_path3 =
 	std::string(project_path) + "/images/ue_amr/dds.xml";
     std::string file_path4 = std::string(project_path) + "/images/ue_amr";
@@ -295,10 +285,11 @@ void UE_plugin::configureOpen5gs(const char *project_path) {
     modify_dockerC(file_path2, "opc", this->opc, this->debug_logs);
     modify_dockerC(file_path2, "dnn", this->dnn, this->debug_logs);
     modify_dockerC(file_path2, "nssai_sst", this->nssai_sst, this->debug_logs);
-    modify_dockerC(file_path2, "nssai_sd", this->nssai_sd, this->debug_logs);
+    modify_or_comment_dockerC(file_path2, "nssai_sd", this->nssai_sd,
+			      this->debug_logs);
 
     // Compose and run Docker container for UE robot
-    std::string folder_path = std::string(project_path) + "/open5gs_setup";
+    std::string folder_path = std::string(project_path) + "/oai";
     std::string docker_compose_command =
 	"cd " + folder_path + " && " + "NAME_ROBOT_" + this->robot_id + "=" +
 	this->robot_container_name + " " + "IP_GNB=" + this->ip_gNB + " " +
@@ -310,6 +301,7 @@ void UE_plugin::configureOpen5gs(const char *project_path) {
 	this->robot_launch_file_name + " " + "EXECUTE_ROBOT_LAUNCH_FILE_" +
 	this->robot_id + "=" + this->execute_robot_launch_file + " " +
 	"ROS_DISCOVERY_SERVER=" + this->ros_discovery_server + " " +
+	"UE_CARRIER_FREQ=3319680000 " +
 	"docker compose -f docker-compose-ue.yml up robot_" + this->robot_id +
 	" -d";
     system(docker_compose_command.c_str());

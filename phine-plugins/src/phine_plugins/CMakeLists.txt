@@ -13,6 +13,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(ignition-cmake2 REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 
 if(BUILD_TESTING)
@@ -32,12 +33,14 @@ set_property(TARGET gNB_plugin PROPERTY CXX_STANDARD 17)
 
 # adding gazebo gazebo-plugin and ros libraries
 ament_target_dependencies(gNB_plugin ignition-plugin${IGN_PLUGIN_VER} ignition-gazebo${IGN_GAZEBO_VER} rclcpp std_msgs)
+target_link_libraries(gNB_plugin yaml-cpp)
 
 add_library(UE_plugin SHARED src/UE_plugin.cc src/aux_functions.cc)
 set_property(TARGET UE_plugin PROPERTY CXX_STANDARD 17)
 
 # adding gazebo gazebo-plugin and ros libraries
 ament_target_dependencies(UE_plugin ignition-plugin${IGN_PLUGIN_VER} ignition-gazebo${IGN_GAZEBO_VER} rclcpp std_msgs)
+target_link_libraries(UE_plugin yaml-cpp)
 
 # ---- NetworkMonitor GUI Plugin ----
 find_package(Qt5 REQUIRED COMPONENTS Core Quick)

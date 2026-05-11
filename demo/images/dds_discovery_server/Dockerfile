@@ -8,12 +8,17 @@ RUN apt update
 RUN apt install -y ros-dev-tools
 RUN apt install -y iputils-ping iproute2
 # Required packages for building
-# Install system dependencies
-RUN apt update && apt install -y \
+# Install system dependencies with retry logic for mirror sync issues
+RUN apt-get clean && \
+    for i in 1 2 3; do \
+        apt-get update && break || sleep 10; \
+    done && \
+    apt-get install -y \
     git cmake build-essential \
     libasio-dev libtinyxml2-dev \
     libfoonathan-memory-dev \
-    iputils-ping iproute2
+    iputils-ping iproute2 && \
+    rm -rf /var/lib/apt/lists/*
 
 # --- Install Fast-CDR ---
 WORKDIR /opt

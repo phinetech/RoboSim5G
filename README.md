@@ -81,30 +81,30 @@ RoboSim5G supports **multiple 5G Core Network implementations**. You can choose 
 
 📖 **See [doc/5G_CORE_NETWORKS.md](doc/5G_CORE_NETWORKS.md) for a detailed comparison and guidance on choosing the right core network.**
 
-Each core network has its own README with setup instructions in the respective `demo/<cn_name>_setup/` folder.
+Each core network has its own setup folder under `core_network_setup/`:
+- **OAI**: `core_network_setup/oai/`
+- **free5GC**: `core_network_setup/free5gc/`
+- **Open5GS**: `core_network_setup/open5gs/`
 
 ## Core Network Setup (Example: OAI)
 
-The following example uses **OAI**, but similar steps apply to other core networks. Refer to the specific README for each:
-- **OAI**: `demo/oai_setup/README.md`
-- **free5GC**: `demo/free5gc_setup/README.md`
-- **Open5GS**: `demo/open5gs_setup/README.md` *(coming soon)*
+The following example uses **OAI**, but similar steps apply to other core networks.
 
-Considering `path` the absolute path to the repository, the OAI files can be found in `path/demo/oai_setup`. Inside this folder there are 3 docker-compose file:
+Considering `path` the absolute path to the repository, the OAI core network files can be found in `path/core_network_setup/oai`. Inside this folder there is a `docker-compose.yml` for launching the OAI Core Network containers.
 
-- docker-compose.yml for launching the OAI Core Network containers
+The gNB and UE docker-compose files are located in the demo folders under `oai/`:
 
-- docker-compose-gNB.yml for launching the OAI gNB container
+- `demo/oai/docker-compose-gNB.yml` for launching the OAI gNB container (used by all core networks, since the RAN components come from OAI v2026.w04)
 
-- docker-compose-ue.yml for launching the OAI UE container (and also other containers related to the demo)
+- `demo/oai/docker-compose-ue.yml` for launching the OAI UE container (and also other containers related to the demo)
 
-Other folders are present inside `oai-setup`, containing configuration files useful for these containers. It is possible to verify that the OAI modules work, by following this pipeline:
+Other folders are present inside `core_network_setup/oai`, containing configuration files useful for these containers. It is possible to verify that the OAI modules work, by following this pipeline:
 
 - In one terminal run the core network:
 
 ```
 
-cd path/demo/oai_setup
+cd path/core_network_setup/oai
 
 docker compose up -d
 
@@ -156,11 +156,12 @@ If everything went correctly, in the logs you should see:
 
 ```
 
-- in the same terminal run the gNB container:
+- in the same terminal run the gNB container (from the demo folder):
 
 ```bash
 
-docker compose -f docker-compose-ran.yml up -d
+cd path/demo/oai
+docker compose -f docker-compose-gNB.yml up -d
 
 ```
 
@@ -186,11 +187,11 @@ If everything goes well you should see in the logs a table with the list of the 
 
 ```
 
-- in the same terminal run the UE container :
+- in the same terminal run the UE container:
 
 ```bash
 
-docker compose -f docker-compose-ue.yml up oai-nr-ue -d
+docker compose -f docker-compose-ue.yml up -d
 
 ```
 
@@ -220,11 +221,12 @@ To stop and remove all the containers:
 
 ```bash
 
+cd path/demo/oai
 docker compose -f docker-compose-gNB.yml down
-
 docker compose -f docker-compose-ue.yml down
 
-docker compose down -d
+cd path/core_network_setup/oai
+docker compose down
 
 
 ```
@@ -276,7 +278,7 @@ _Some warning messages may appear during the build — they can usually be ignor
     
     - `docker-compose-gNB.yml`
         
-    - `gnb.sa.bandn78.fr1.106PRB.rfsim.conf`
+    - `gNB_config.yaml`
         
     
     Changes include:
@@ -305,10 +307,12 @@ _Some warning messages may appear during the build — they can usually be ignor
 Before launching the world, make sure the following environment variables are exported:
 
 ```bash
-export PROJECT_PATH=<your-project-path>  # Must contain oai_setup/ 
+export PROJECT_PATH=<your-project-path>  # Must contain oai/ 
 export IGN_GAZEBO_SYSTEM_PLUGIN_PATH=<path-to-plugins>  # Contains libgNB-plugin.so
 export IGN_GAZEBO_RESOURCE_PATH=<path-to-models>  # Contains phine_gNB model`
 ```
+
+**Note:** The world file is now automatically selected based on the `CORE_NETWORK` environment variable (defaults to `oai`). The launch file reads `CORE_NETWORK` and loads `world_only_{core_network}.sdf` — no manual editing of the launch file is needed.
 ### 📝 gNB World File Declaration
 
 Add the following to your `world-file.sdf` to include the gNB:
@@ -343,7 +347,7 @@ Add the following to your `world-file.sdf` to include the gNB:
 | `link_name`           | Link whose pose is streamed over ROS 2 (keep as `phine_cell` unless model changes)               |
 | `net_name`            | Name of the Docker network to attach the gNB container                                           |
 | `IP_GNB`              | Static IP address of the gNB container                                                           |
-| `IP_AMF`              | IP address of the AMF container  <br>(Must match value in `oai_setup/conf/config.yaml`)          |
+| `IP_AMF`              | IP address of the AMF container  <br>(Must match value in `core_network_setup/oai/conf/config.yaml`)          |
 | `debug`               | Set to `true` to enable plugin debug output                                                      |
 | `mobile_country_code` | MCC used for registration, must match value in AMF config                                        |
 | `mobile_network_code` | MNC used for registration, must match value in AMF config                                        |
@@ -464,7 +468,7 @@ The system relies on three main networks:
     
     - Used for communication between the remote control center and the robot
         
-    - Subnet is configurable in `path/demo/oai-setuo/conf/config.yaml`
+    - Subnet is configurable in `path/core_network_setup/oai/conf/config.yaml`
 
 ---
 
@@ -575,11 +579,11 @@ The Discovery Server IP must match the value in both the UE plugin `<ros_discove
 
 When the plugin is loaded, it performs the following steps:
 
-- **Modifies configuration files for the UE** in `$PROJECT_PATH/oai_setup`, specifically:
+- **Modifies configuration files for the UE** in `$PROJECT_PATH/oai`, specifically:
     
-    - `docker-compose-UE.yml`
+    - `docker-compose-ue.yml`
         
-    - `conf/UE<robot_ID>.conf`
+    - `oai/conf/UE_config.yaml`
 - **Copies the user robot workspace** inside the `$PROJECT_PATH/images/ue_amr` folder, which should contain:
 
 	- robot logic launch file
@@ -593,7 +597,7 @@ When the plugin is loaded, it performs the following steps:
         
     - The `ros_gz_bridge`
         
-- **Launches the robot-UE container**, using the `robot_<robot_ID>` service defined in `$PROJECT_PATH/oai_setup/docker-compose-ue.yml`  
+- **Launches the robot-UE container**, using the `robot_<robot_ID>` service defined in `$PROJECT_PATH/oai/docker-compose-ue.yml`  
     _(Currently, only `<robot_ID>=1` is tested.)_
     
 - **Automatically launches the ROS-Gazebo bridge** inside the container
@@ -610,7 +614,7 @@ When the plugin is loaded, it performs the following steps:
 Set the following environment variables on the host system:
 
 ```sh
-export PROJECT_PATH=<your-project-path>  # Must contain oai_setup/
+export PROJECT_PATH=<your-project-path>  # Must contain oai/
 export IGN_GAZEBO_SYSTEM_PLUGIN_PATH=<path-to-plugins> # Contains libUE-plugin.so and libgNB-plugin.so
 export IGN_GAZEBO_RESOURCE_PATH=<path-to-models>  # Contains phine-gNB model
 export ROS_DOMAIN_ID=<your-ros2-domain-id>  # Shared by host and robot-UE container
@@ -653,14 +657,14 @@ Refer to `path/demo/gazebo_launch` for an example.
 #### ✅ Required Folder Structure and Images
 
 - The plugin expects the folder:  
-    `$PROJECT_PATH/oai_setup/images/ue_amr`  
+    `$PROJECT_PATH/oai/images/ue_amr`  
     It must contain the files from:  
-    `path/demo/oai_setup/images/ue_amr`
+    `path/demo/images/ue_amr`
     
 - This directory must contain a `Dockerfile` used to build the `ue_amr` image.  
     You can **customize the Dockerfile** to install additional robot dependencies or ROS packages.
     
-- The folder `$PROJECT_PATH/oai_setup` must also contain:
+- The folder `$PROJECT_PATH/oai` must also contain:
     
     - All configuration files for the 5G OAI components
         
@@ -668,7 +672,7 @@ Refer to `path/demo/gazebo_launch` for an example.
         
     
     Specifically, the plugin will launch the **`robot_<robot_ID>` service** defined in:  
-    `$PROJECT_PATH/oai_setup/docker-compose-ue.yml`
+    `$PROJECT_PATH/oai/docker-compose-ue.yml`
     
     You may extend `docker-compose-ue.yml` to include services for:
     
@@ -723,7 +727,6 @@ To add the UE plugin to your SDF world file, include:
 	<opc>C42449363BBAD02B66D16BC975D77CC1</opc>
 	<dnn>oai</dnn>
 	<nssai_sst>1</nssai_sst>
-	<nssai_sd>no</nssai_sd>
 	<robot_project_path>${PROJECT_PATH}/nav_stack</robot_project_path>
 	<robot_project_name>nav_stack</robot_project_name>
 	<execute_robot_launch_file>true</execute_robot_launch_file>
@@ -741,7 +744,7 @@ To add the UE plugin to your SDF world file, include:
 | --------------------------- | --------------------------------------------------------------------------- |
 | `cn_type`                   | Core Network type (`oai`, `free5gc`, or `open5gs`)                          |
 | `robot_container_name`      | Name of the UE container to be launched (e.g., `ue_turtlebot`)              |
-| `robot_id`                  | Unique ID for the robot, used to select `UE<robot_id>.conf`                 |
+| `robot_id`                  | Unique ID for the robot                                                     |
 | `ip_robotUE`                | Static IP assigned to the robot UE container                                |
 | `net_name`                  | Name of the Docker network to attach the UE container                       |
 | `ip_gnb`                    | IP address of the gNB container                                             |
@@ -752,7 +755,7 @@ To add the UE plugin to your SDF world file, include:
 | `opc`                       | Operator-specific key used in authentication                                |
 | `dnn`                       | Data network name (e.g., `oai`, `internet`, `ims`)                          |
 | `nssai_sst`                 | Network slice type (e.g., `1` for eMBB, URLLC, etc.)                        |
-| `nssai_sd`                  | Slice differentiator. If set to `no`, it will not be assigned               |
+| `nssai_sd`                  | Slice differentiator. Optional (defaults to `no`); if omitted or `no`, not written to UE config |
 | `robot_project_path`        | Path to the ROS 2 workspace with robot logic                                |
 | `robot_project_name`        | Name of the ROS 2 workspace with robot logic                                |
 | `execute_robot_launch_file` | Whether to launch robot logic inside the container (`true` or `false`)      |
@@ -765,16 +768,16 @@ To add the UE plugin to your SDF world file, include:
 
 ### ⚠️ Notes
 
-- Files such as `UE<robot_id>.conf` should be located in:  
-    `path/demo/oai_setup/conf/UE<robot_id>.conf`
+- UE credential files are located in:
+    `path/demo/oai/conf/UE_config.yaml`
     
 - All credentials (`imsi`, `key`, `opc`, `dnn`, `nssai_sst`, `nssai_sd`) **must match** the configuration of the 5G core network.
     
-- If `nssai_sd` is set to `"no"`, the `nssai_sd` won't be assigned .
+- The `nssai_sd` parameter is **optional** (defaults to `"no"`). If omitted or set to `"no"`, it won't be written to the UE config.
     
 - The `<subnet_5G>` must match the value defined in the core network's configuration file:
  ```sh
-    path/demo/oai_setup/conf/config.yaml
+    path/core_network_setup/oai/conf/config.yaml
 ```
     
 - Be sure to follow the same network and workspace structure as the demo for compatibility.
@@ -891,14 +894,12 @@ The **gNB Power Plugin** and **UE Power Plugin** are Ignition Gazebo GUI plugins
 Both plugins provide a graphical interface to:
 
 - 🟢 **Start/Stop** the radio process (`nr-softmodem` for gNB, `nr-uesoftmodem` for UE) inside the container
-- 🔄 **Toggle between OAI versions** (v24 and v26) which use different configuration file formats
-- 📊 **Monitor process state** (running/stopped) with visual indicators
-- 🔧 **Configure runtime parameters** like container names, IP addresses, and OAI version
+- � **Monitor process state** (running/stopped) with visual indicators
+- 🔧 **Configure runtime parameters** like container names and IP addresses
 
 This is particularly useful during simulation development and testing, where you may need to:
 - Verify 5G connectivity by restarting the UE or gNB
 - Test failure scenarios by stopping the radio link
-- Switch between OAI versions without rebuilding containers
 - Observe how your robot application handles connection loss
 
 ---
@@ -908,15 +909,12 @@ This is particularly useful during simulation development and testing, where you
 #### gNB Power Plugin
 
 1. **First Click** (Connect): Checks if the `nr-softmodem` process is running in the specified gNB container
-2. **Subsequent Clicks** (Toggle): Starts or stops the gNB radio process using the appropriate command for the selected version:
-   - **v24**: Launches with `.conf` configuration file and `--sa` flag
-   - **v26**: Launches with `.yaml` configuration file (no `--sa` flag)
+2. **Subsequent Clicks** (Toggle): Starts or stops the gNB radio process using `.yaml` configuration (no `--sa` flag)
 
 #### UE Power Plugin
 
 Works similarly to the gNB plugin, but controls the `nr-uesoftmodem` process in the UE container:
-- **v24**: Uses `.conf` file with frequency `3619200000` Hz
-- **v26**: Uses `.yaml` file with frequency `3319680000` Hz
+- Uses `.yaml` file with frequency `3319680000` Hz
 - Requires the **gNB IP address** to establish the RF simulator connection
 
 ---
@@ -935,7 +933,6 @@ Add the following blocks inside the `<gui>` section of your world file:
 <gui>
   <plugin name="phine_plugins::gNBPowerPlugin" filename="gNBPowerPlugin">
     <container_name>oai-gNB1</container_name>
-    <version>v24</version>
   </plugin>
 </gui>
 ```
@@ -946,7 +943,6 @@ Add the following blocks inside the `<gui>` section of your world file:
 <gui>
   <plugin name="phine_plugins::UePowerPlugin" filename="UePowerPlugin">
     <container_name>ue_turtlebot</container_name>
-    <version>v24</version>
     <gnb_ip>192.168.70.160</gnb_ip>
   </plugin>
 </gui>
@@ -972,7 +968,6 @@ If set, this overrides the default value. A value provided in the SDF `<containe
 
 When loaded, the plugin displays:
 - **Container Name Field**: Name of the gNB Docker container (e.g., `oai-gNB1`)
-- **Version Selector**: Dropdown to choose between "v24 (.conf)" and "v26 (.yaml)"
 - **Power Button**: 
   - First click: **Connect** to the container and check process status
   - Subsequent clicks: **Toggle** the gNB process on/off
@@ -983,12 +978,11 @@ When loaded, the plugin displays:
 
 Similar to gNB, with an additional field:
 - **Container Name Field**: Name of the UE Docker container (e.g., `ue_turtlebot`)
-- **Version Selector**: Choose between v24 and v26
 - **gNB IP Field**: IP address of the gNB for RF simulator connection (e.g., `192.168.70.160`)
 - **Power Button**: Connect and toggle the UE process
 - **Status Display**: Connection and process state
 
-**Note**: Container name, version, and gNB IP can only be changed **before** the first connection. Once connected, these fields are locked to prevent accidental misconfiguration during active radio sessions.
+**Note**: Container name and gNB IP can only be changed **before** the first connection. Once connected, these fields are locked to prevent accidental misconfiguration during active radio sessions.
 
 ---
 
@@ -999,14 +993,12 @@ Similar to gNB, with an additional field:
 | **Parameter**    | **Description**                                           | **Default**   |
 | ---------------- | --------------------------------------------------------- | ------------- |
 | `container_name` | Docker container name of the gNB                          | `oai-gNB1`    |
-| `version`        | OAI version: `v24` (uses .conf) or `v26` (uses .yaml)     | `v24`         |
 
 #### UE Power Plugin Parameters
 
 | **Parameter**    | **Description**                                           | **Default**       |
 | ---------------- | --------------------------------------------------------- | ----------------- |
 | `container_name` | Docker container name of the UE                           | `ue_turtlebot`    |
-| `version`        | OAI version: `v24` (uses .conf) or `v26` (uses .yaml)     | `v24`             |
 | `gnb_ip`         | IP address of the gNB container for RF simulator          | `192.168.70.160`  |
 
 ---
@@ -1014,7 +1006,7 @@ Similar to gNB, with an additional field:
 ### ✅ Tested Configurations
 
 These plugins have been **tested and verified** with:
-- **OAI 5G Core Network** (`oai_setup`)
+- **OAI 5G Core Network**
 - **demo** mode (Gazebo on host)
 - **demo_containerized** mode (Gazebo in Docker)
 
@@ -1026,12 +1018,13 @@ Support for **free5GC** and **Open5GS** core networks is planned for future rele
 
 1. **Launch your OAI 5G core network**:
    ```bash
-   cd path/demo/oai_setup
+   cd path/core_network_setup/oai
    docker compose up -d
    ```
 
 2. **Launch gNB and UE containers** (without starting the radio processes):
    ```bash
+   cd path/demo/oai
    docker compose -f docker-compose-gNB.yml up -d
    docker compose -f docker-compose-ue.yml up -d
    ```
@@ -1040,13 +1033,13 @@ Support for **free5GC** and **Open5GS** core networks is planned for future rele
 
 4. **In Gazebo GUI**:
    - Open the **gNB Power Control** panel
-   - Verify container name and version
+   - Verify container name
    - Click **Connect** to check status
    - Click **Power Toggle** to start the gNB radio
 
 5. **Then control the UE**:
    - Open the **UE Power Control** panel
-   - Verify container name, version, and gNB IP
+   - Verify container name and gNB IP
    - Click **Connect** to check status
    - Click **Power Toggle** to start the UE and establish the 5G connection
 

@@ -4,126 +4,128 @@
 
 - Docker Compose version v2.33.1
 
+- `mongodb-mongosh` (required only for Open5GS core network — install with `sudo apt install mongodb-mongosh`)
+
+- `nvidia-container-toolkit` (required only if you want to use GPU acceleration for the Gazebo simulation — install following the [NVIDIA Container Toolkit install guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html))
+
 ## Choosing a Core Network
 
-RoboSim5G supports **three 5G Core Network implementations**. Each has its own launch and kill scripts:
+RoboSim5G supports **three 5G Core Network implementations**: OAI, free5GC, and Open5GS.
 
-| Core Network | Launch Script | Kill Script |
-|--------------|--------------|-------------|
-| **OAI** (OpenAirInterface) | `launch_robot_5G_docker.sh` | `kill_all.sh` |
-| **free5GC** | `launch_robot_5G_docker_free5gc.sh` | `kill_all_free5gc.sh` |
-| **Open5GS** | `launch_robot_5G_docker_open5gs.sh` | `kill_all_open5gs.sh` |
+A single `launch.sh` and `kill.sh` script is provided. You select the core network using the `CORE_NETWORK` environment variable (defaults to `oai`):
 
-**Important:** When you choose a core network, you must also **configure the corresponding Gazebo world file** in the simulation container (see [Configuring Gazebo World for Your CN](#configuring-gazebo-world-for-your-cn) section below).
+```bash
+CORE_NETWORK=oai       ./launch.sh   # OpenAirInterface (default)
+CORE_NETWORK=free5gc   ./launch.sh   # free5GC
+CORE_NETWORK=open5gs   ./launch.sh   # Open5GS
+```
 
-**Key Difference - free5GC N3 Interface:**
+The core network containers are launched from the `core_network_setup/` folder at the root of the repository. Each CN has its own subfolder (`core_network_setup/oai/`, `core_network_setup/free5gc/`, `core_network_setup/open5gs/`) containing the docker-compose file and related configuration.
+
+**Key Difference — free5GC N3 Interface:**
 free5GC uses a **separate N3 network** (`demo-n3` bridge) for the gNB ↔ UPF GTP-U tunnel, while OAI and Open5GS use the main `phine-net` for all communication.
 
 📖 **For detailed comparison and guidance on choosing:** See [doc/5G_CORE_NETWORKS.md](../doc/5G_CORE_NETWORKS.md)
 
-## Changing Plugin path
+### Open5GS: UE Subscriber Registration
 
-In `launch_robot_5G` at line 4 you have to change the path to Gazebo Plugin to your own (sometimes it can be in /usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins)
-## Builiding Images ad building ROS2 pkgs
-On a terminal in the main repo directory:
+When using Open5GS, the launch script automatically calls `core_network_setup/open5gs/scripts/add_ue_subscriber.sh` to register the UE in the Open5GS MongoDB database. This script uses the `open5gs-dbctl` tool (included in the repo) which requires `mongosh` to be installed on the host.
+
+Install the prerequisite:
+```bash
+sudo apt install mongodb-mongosh
+```
+
+### Automatic World Selection
+
+The Gazebo world file is **automatically selected** based on the `CORE_NETWORK` environment variable. The launch file (`gazebo_launch.launch.py`) inside the simulation container reads the `CORE_NETWORK` variable and loads the corresponding world file (`world_only_oai.sdf`, `world_only_free5gc.sdf`, or `world_only_open5gs.sdf`). No manual editing of the launch file or rebuilding of the simulation image is required when switching between core networks.
+
+### RAN Docker Compose Structure
+
+The `oai/` folder in this demo contains the docker-compose files for the Radio Access Network components. The folder is named `oai/` because the gNB and UE are from **OAI v2026.w04** (`oaisoftwarealliance/oai-gnb:2026.w04`), used with all three core networks:
+
+- `docker-compose-gNB.yml` — Base gNB compose file, used for **all** core networks
+- `docker-compose-gNB.free5gc.yml` — Docker Compose **extension** for free5GC only (adds the N3 network interface to the gNB)
+- `docker-compose-ue.yml` — UE, RCC, DDS Discovery Server, and **simulation** containers
+- `conf/gNB_config.yaml` — gNB configuration (modified at runtime by the Gazebo gNB plugin)
+- `conf/UE_config.yaml` — UE configuration (modified at runtime by the Gazebo UE plugin)
+
+## Configuration via Volumes and `DEMO_PROJECT_PATH`
+
+In the containerized demo, configuration files are **not baked into the Docker images**. Instead, they are mounted as volumes from the host, allowing the Gazebo plugins running inside the simulation container to modify them at runtime.
+
+### The `DEMO_PROJECT_PATH` Environment Variable
+
+`DEMO_PROJECT_PATH` is set by `launch.sh` to the absolute path of the `demo_containerized/` directory on the host. It is critical for all volume mounts in the docker-compose files to resolve correctly. The docker-compose files use it to mount:
+
+- **UE config**: `${DEMO_PROJECT_PATH}/oai/conf/UE_config.yaml` → `/opt/oai-nr-ue/etc/nr-ue.yaml` (inside the UE container)
+- **gNB config**: `${DEMO_PROJECT_PATH}/oai/conf/gNB_config.yaml` → `/opt/oai-gnb/etc/gnb.yaml` (inside the gNB container)
+- **OAI folder**: `${DEMO_PROJECT_PATH}/oai` → `/app/oai` (inside the simulation container)
+
+### How Plugin Configuration Works Inside the Container
+
+The simulation container has `PROJECT_PATH=/app` set internally. The Gazebo plugins (gNB_plugin and UE_plugin) read `PROJECT_PATH` and modify files under `$PROJECT_PATH/oai/` — i.e., `/app/oai/conf/gNB_config.yaml` and `/app/oai/docker-compose-gNB.yml`. Because `/app/oai` is a volume mount from the host (`${DEMO_PROJECT_PATH}/oai`), these modifications are reflected on the host filesystem.
+
+### Docker Socket Volume
+
+The simulation container mounts the host Docker socket (`/var/run/docker.sock:/var/run/docker.sock`). This allows the Gazebo plugins, which run inside the simulation container, to execute `docker compose` commands that actually run on the **host** Docker daemon. This is how the gNB and UE containers are launched by the plugins — the plugin calls `docker compose -f docker-compose-gNB.yml up -d` from inside the simulation container, but the container is created on the host.
+
+**This means:**
+- The gNB and UE containers are **sibling containers** (not nested), running directly on the host Docker daemon
+- The plugins modify the config files through the volume mount, then launch sibling containers using those modified configs
+- `DEMO_PROJECT_PATH` must be set correctly, otherwise the volume mounts will fail and the plugins won't be able to find the configuration files or launch containers
+
+## Building Images
+On a terminal in the demo_containerized directory:
 
 ```
 ./build_images.sh
 ```
+
+This will build the `simulation`, `rcc`, and `dds_discovery_server` Docker images. The `ue_amr` Docker image is built automatically by the UE plugin at simulation runtime.
+
 ## Running simulation
 
-1. On a terminal, launch the script for your chosen core network:
+1. On a terminal, launch the simulation with your chosen core network:
 
-**For OAI:**
 ```bash
-source launch_robot_5G_docker.sh
+CORE_NETWORK=oai source launch.sh
 ```
 
-**For free5GC:**
-```bash
-source launch_robot_5G_docker_free5gc.sh
-```
-
-**For Open5GS:**
-```bash
-source launch_robot_5G_docker_open5gs.sh
-```
+(Replace `oai` with `free5gc` or `open5gs` as needed. If `CORE_NETWORK` is not set, it defaults to `oai`.)
 
 Insert your password when required.
 
-These commands will launch the CN container, the Gazebo Simulation with the gNB embedded (visualization + container), the robot-UE container, and the RCC container. It will take 40 seconds to start everything, finishing when Rviz opens.
-The first time you launch the simulation, it might fail since the UE plugin will build the robot-UE plugin for a long time.
+This command will launch the CN containers (from `core_network_setup/`), the Gazebo Simulation container with the gNB embedded, the robot-UE container, and the RCC container. It will take 40 seconds to start everything, finishing when Rviz opens.
+The first time you launch the simulation, it might fail since the UE plugin will build the robot-UE image for a long time.
 
 2. On Rviz click on "Nav2 goal" and then select a feasible location.
 
-3. Whenever you want, look for the three vertical dot on the top right of Gazebo GUI, click it and in the search box of Gazebo search "UE_Power_Plugin" and "gNB_Power_Plugin". In the Gazebo GUI two buttons will pop up, that will switch on or off the UE and gNB of the robot.
+3. Whenever you want, look for the three vertical dots on the top right of Gazebo GUI, click it and in the search box of Gazebo search "UE_Power_Plugin" and "gNB_Power_Plugin". In the Gazebo GUI two buttons will pop up, that will switch on or off the UE and gNB of the robot.
 
 4. Press the gNB button, that will switch both gNB and UE off.
 
-5. The robot will continue its path (or it will stay still if he does not have one), you can try to give another goal but the communication won't be enabled
+5. The robot will continue its path (or it will stay still if it does not have one), you can try to give another goal but the communication won't be enabled.
 
-6. Switch on the UE and gNB from the buttons
+6. Switch on the UE and gNB from the buttons.
 
-7. Give another Nav2 Goal or wait for the robot to finish its path
+7. Give another Nav2 Goal or wait for the robot to finish its path.
 
-## Remove all the container and kill gazebo
+## Remove all the containers
 
-In the main folder, use the kill script for your chosen core network:
+In the demo_containerized folder, run the kill script with the same `CORE_NETWORK` value:
 
-**For OAI:**
 ```bash
-./kill_all.sh
-```
-
-**For free5GC:**
-```bash
-./kill_all_free5gc.sh
-```
-
-**For Open5GS:**
-```bash
-./kill_all_open5gs.sh
-```
-
-## Configuring Gazebo World for Your CN
-
-**IMPORTANT:** The Gazebo world file in the simulation container must match your chosen core network. Each CN requires different configurations (IMSI, DNN, network addresses, etc.).
-
-### Available World Files
-
-Three world files are provided in `images/simulation/gazebo_launch/src/ign_turtlebot/worlds/`:
-
-- `world_only.sdf` - **For OAI**
-- `world_only_free5gc.sdf` - **For free5GC**
-- `world_only_open5gs.sdf` - **For Open5GS**
-
-### Configure the Launch File
-
-Edit `images/simulation/gazebo_launch/src/ign_turtlebot/launch/gazebo_launch.launch.py` at **line 68**:
-
-```python
-# Change this line to match your chosen CN:
-world = os.path.join(get_package_share_directory('ign_turtlebot'), 
-                     "worlds", "world_only_free5gc.sdf")  # Change filename here
-```
-
-**Examples:**
-- For OAI: `"world_only.sdf"`
-- For free5GC: `"world_only_free5gc.sdf"`
-- For Open5GS: `"world_only_open5gs.sdf"`
-
-After changing the world file, rebuild the simulation container:
-```bash
-./build_images.sh
+CORE_NETWORK=oai ./kill.sh
 ```
 
 ## Modify gNB parameters
 
-Inside the world file for your chosen CN (see [Configuring Gazebo World for Your CN](#configuring-gazebo-world-for-your-cn)), change the parameters at line 106.
+Inside the world file for your chosen CN, change the gNB parameters. The world files are located in `images/simulation/gazebo_launch/src/ign_turtlebot/worlds/`:
 
-**For OAI:** `images/simulation/gazebo_launch/src/ign_turtlebot/worlds/world_only.sdf`
-**For free5GC:** `images/simulation/gazebo_launch/src/ign_turtlebot/worlds/world_only_free5gc.sdf`
-**For Open5GS:** `images/simulation/gazebo_launch/src/ign_turtlebot/worlds/world_only_open5gs.sdf`
+- `world_only_oai.sdf` — For OAI
+- `world_only_free5gc.sdf` — For free5GC
+- `world_only_open5gs.sdf` — For Open5GS
 
 ```xml
 <include>
@@ -144,13 +146,16 @@ Inside the world file for your chosen CN (see [Configuring Gazebo World for Your
 ```
 
 **Note:** The `cn_type` parameter specifies which 5G Core Network the plugin should connect to.
+
+After modifying world files, rebuild the simulation image:
+```bash
+./build_images.sh
+```
+
 ## Modify UE parameters
 
-Inside the world file for your chosen CN (see [Configuring Gazebo World for Your CN](#configuring-gazebo-world-for-your-cn)), change the parameters at line 56.
+Inside the world file for your chosen CN (same files as above), change the UE parameters:
 
-**For OAI:** `images/simulation/gazebo_launch/src/ign_turtlebot/worlds/world_only.sdf`
-**For free5GC:** `images/simulation/gazebo_launch/src/ign_turtlebot/worlds/world_only_free5gc.sdf`
-**For Open5GS:** `images/simulation/gazebo_launch/src/ign_turtlebot/worlds/world_only_open5gs.sdf`
 ```xml
 <plugin name="phine_plugins::UE_plugin" filename="UE_plugin">
   <cn_type>oai</cn_type>  <!-- Options: oai, free5gc, open5gs -->
@@ -166,7 +171,6 @@ Inside the world file for your chosen CN (see [Configuring Gazebo World for Your
   <opc>C42449363BBAD02B66D16BC975D77CC1</opc>
   <dnn>oai</dnn>
   <nssai_sst>1</nssai_sst>
-  <nssai_sd>no</nssai_sd>
   <robot_project_path>${PROJECT_PATH}/nav_stack</robot_project_path>
   <robot_project_name>nav_stack</robot_project_name>
   <execute_robot_launch_file>true</execute_robot_launch_file>
@@ -181,52 +185,32 @@ Inside the world file for your chosen CN (see [Configuring Gazebo World for Your
 
 ## Remove CN from launch file
 
-If you want to manage the CN containers separately, you can comment out the CN launch section in your chosen launch script.
+If you want to manage the CN containers separately, you can comment out the CN launch section in `launch.sh`:
 
-**Example for OAI** (`launch_robot_5G_docker.sh`):
 ```sh
-# cd oai_setup
+# cd "$CN_DIR"
 # docker compose up -d
-# cd ..
-```
-
-**Example for free5GC** (`launch_robot_5G_docker_free5gc.sh`):
-```sh
-# cd free5gc_setup
-# docker compose up -d
-# cd ..
-```
-
-**Example for Open5GS** (`launch_robot_5G_docker_open5gs.sh`):
-```sh
-# cd open5gs_setup
-# docker compose up -d
-# cd ..
 ```
 
 ## Changing ROS DOMAIN (avoiding multi-user bugs)
 
-In `launch_robot_5G.sh` modify with the ID that you want(each PC should have its own):
+Set the `ROS_DOMAIN_ID` environment variable before launching (each PC should have its own):
 
+```bash
+ROS_DOMAIN_ID=42 CORE_NETWORK=oai source launch.sh
 ```
 
-export ROS_DOMAIN_ID=ID
+## Changing GZ partition (avoiding multi-user bugs)
 
-```
+Set the `IGN_PARTITION` environment variable before launching (each PC should have its own):
 
-## Changing GZ partion(avoiding multi-user bugs)
-
-In `launch_robot_5G.sh` modify with the partion that you want(each PC should have its own):
-
-```
-
-export IGN_PARTITION=partition_name
-
+```bash
+IGN_PARTITION=my_partition CORE_NETWORK=oai source launch.sh
 ```
 
 ## Using the Button UE and gNB plugin
 
-If you change the container name in the gNB and UE declarations, you should match the same container names for the two environment variable in `launch_robot_5G.sh`: `GNB_NAME_FOR_BUTTON` , `UE_NAME_FOR_BUTTON`.
+If you change the container name in the gNB and UE declarations, you should match the same container names for the two environment variables `GNB_NAME_FOR_BUTTON` and `UE_NAME_FOR_BUTTON` (set before launching or export them).
 
 ## NVIDIA GPU Acceleration (Optional)
 
@@ -236,22 +220,48 @@ To enable hardware acceleration for the Gazebo simulation, you need an NVIDIA GP
 Follow the official [NVIDIA Container Toolkit Installation Guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) to set up the repository and install the `nvidia-container-toolkit` package.
 
 ### 2. Configure the Launch Script
-The simulation container is designed to switch between the standard Linux runtime and the NVIDIA runtime dynamically. Open `launch_robot_5G_docker.sh` and ensure the `GPU_RUNTIME` variable is set correctly:
+The simulation container is designed to switch between the standard Linux runtime and the NVIDIA runtime dynamically. Set the `GPU_RUNTIME` variable before launching:
 
 ```bash
-# Set to "nvidia" to use your GPU, or "runc" for standard CPU execution
-export GPU_RUNTIME="nvidia"
+GPU_RUNTIME=nvidia CORE_NETWORK=oai source launch.sh
 ```
+
+Set `GPU_RUNTIME` to `"nvidia"` to use your GPU, or leave it unset / set to `"runc"` for standard CPU execution.
+
 ## Configuring Containerized Simulation
 
 To develop and deploy custom robotic logic within the existing containerized environment, follow these steps to integrate your ROS 2 workspaces and launch scripts.
-To add custom code, it should be consider that the images have installed:
+To add custom code, it should be considered that the images have installed:
 
 - Ubuntu 22.04
 
 - ROS2 humble
 
 - gazebo ignition fortress 2.6.9
+
+### Directory Layout for Customization
+
+The key directories for customization are all under `images/simulation/`:
+
+| Directory | Purpose |
+|-----------|---------|
+| `images/simulation/images/ue_amr/` | Contains the Dockerfile and files for the **robot-UE container** image. Place additional ROS 2 packages or dependencies here. The UE plugin will copy your robot logic into this folder, build the image, and launch it. |
+| `images/simulation/nav_stack/` | Contains the **robot logic** ROS 2 workspace (navigation stack, ros_gz_bridge, etc.). The UE plugin copies this workspace into the robot-UE container at runtime and builds it inside the container. Modify this to change what the robot does. |
+| `images/simulation/gazebo_launch/` | Contains the **Gazebo world** workspace with world files, plugin declarations, and the launch file. Modify world files here to change gNB/UE parameters, add models, etc. |
+
+The `oai/` folder (at `demo_containerized/oai/`, mounted into the simulation container as `/app/oai`) contains:
+- `docker-compose-gNB.yml` / `docker-compose-ue.yml` — Control how the gNB and UE containers are launched, their networks, volumes, and entrypoints. Modify these to change container behavior (e.g., add environment variables, change network settings).
+- `conf/gNB_config.yaml` / `conf/UE_config.yaml` — 5G configuration files modified at runtime by the plugins.
+
+### Minimal Customization (Let the Plugins Handle Everything)
+
+If your changes are limited to the robot logic and world parameters, you can simply:
+
+1. Place your robot ROS 2 workspace in `images/simulation/nav_stack/`
+2. Update the UE plugin parameters in the world file (`<robot_package_name>`, `<robot_project_name>`, `<robot_launch_file_name>`) to match your workspace
+3. Rebuild the simulation image with `./build_images.sh`
+
+The Gazebo plugins will handle the rest — copying the robot workspace into the UE container, building it, modifying the docker-compose and config files, and launching the gNB and UE containers automatically.
 
 
 ## 1. Integrate Your Workspaces
@@ -271,15 +281,15 @@ Then, update the `images/simulation/Dockerfile` (typically around lines 66–67)
 
 The UE Plugin in your `.sdf` world file acts as the bridge between the 5G simulation and your ROS 2 logic. You must modify the `<robot_package_name>` parameter to match the package name within your custom workspace and `<robot_project_name>` has to match the name of your robot workspace.
 
-Locate:
+Locate the world file for your chosen CN in:
 
-    images/simulation/gazebo_launch/src/ign_turtlebot/worlds/world_only.sdf
+    images/simulation/gazebo_launch/src/ign_turtlebot/worlds/world_only_<cn>.sdf
 
 Modify:
 
     <plugin name="phine_plugins::UE_plugin" filename="UE_plugin">
         ...
-        <robot_project_name>our_custom_workspace<robot_project_name>
+        <robot_project_name>your_custom_workspace</robot_project_name>
         <robot_package_name>your_custom_package_name</robot_package_name>
         <robot_launch_file_name>your_robot_logic.launch.py</robot_launch_file_name>
         ...
@@ -289,13 +299,11 @@ Modify:
 
 ## 3. Update the Launch Orchestration
 
-To ensure the simulation container starts with your specific world and configurations, modify the `docker-compose-ue.yml` file located in:
+To ensure the simulation container starts with your specific world and configurations, modify the `oai/docker-compose-ue.yml` file.
 
-    images/simulation/oai_setup/docker-compose-ue.yml
+Update the `entrypoint` associated with the simulation service to call your custom launch file:
 
-At approximately line 145, update the `entrypoint` or the `command` associated with the simulation service to call your custom launch file:
-
-    # Inside images/simulation/oai_setup/docker-compose-ue.yml
+    # Inside oai/docker-compose-ue.yml
     services:
       simulation:
         ...
@@ -308,16 +316,16 @@ At approximately line 145, update the `entrypoint` or the `command` associated w
 
 ---
 
-## Scripts in `launch-robot_5G_docker.sh` 
+## Scripts in `launch.sh`
 
 ### `wait_for_core_network.sh`
-This script ensures that the OAI core network is fully operational before proceeding with the simulation. It waits for the MySQL database container to become healthy and checks that all critical OAI services (`oai-nrf`, `oai-amf`, `oai-smf`, `oai-upf`) are running. The script is called automatically during the simulation launch process to avoid race conditions and ensure a reliable startup sequence.
+Located in `core_network_setup/oai/`, this script ensures that the OAI core network is fully operational before proceeding with the simulation. It waits for the MySQL database container to become healthy and checks that all critical OAI services (`oai-nrf`, `oai-amf`, `oai-smf`, `oai-upf`) are running. The script is called automatically during the simulation launch process to avoid race conditions and ensure a reliable startup sequence.
 
-### `create_physical_bridge.sh`
-This script creates a custom Docker bridge network (`ros_gz_net`) with a specified subnet. It is used to enable communication between simulation containers (such as Gazebo, robot-UE, and network components) on a dedicated network, ensuring proper connectivity and isolation for the simulation environment. The script is executed as part of the launch process and typically does not require manual intervention.
+### `ros_gz_net` bridge creation
+The `launch.sh` script creates a custom Docker bridge network (`ros_gz_net`) with a specified subnet. It is used to enable communication between simulation containers (such as Gazebo, robot-UE, and network components) on a dedicated network, ensuring proper connectivity and isolation for the simulation environment. This is executed as part of the launch process and typically does not require manual intervention.
 
 ## Important
 
-After making these changes, remember to rebuild your images to apply the updates to the container layers:
+After making changes to the world files or the Dockerfile, remember to rebuild your images to apply the updates to the container layers:
 
     ./build_images.sh

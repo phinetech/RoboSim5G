@@ -59,5 +59,6 @@ demo/images/ue_amr/nav_stack
 
 .DS_Store
 
-demo/open5gs_setup/db_data/*
+core_network_setup/open5gs/db_data/*
+core_network_setup/open5gs/db_data/*
 demo_containerized/open5gs_setup/db_data/*

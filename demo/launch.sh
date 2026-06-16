@@ -1,6 +1,10 @@
 #!/bin/bash
 # Unified launch script for RoboSim5G native demo
-# Usage: CORE_NETWORK=oai|free5gc|open5gs ./launch.sh
+# Usage: CORE_NETWORK=oai|free5gc|open5gs|external ./launch.sh
+#
+# When CORE_NETWORK=external the script skips launching any local core network
+# containers. Configuration is read from external.env (in this directory) or
+# from the file pointed to by the EXTERNAL_ENV_FILE environment variable.
 
 set -e
 
@@ -10,8 +14,8 @@ DEMO_DIR=$(cd "$(dirname "$0")" && pwd)
 CN_DIR="$REPO_ROOT/core_network_setup/$CORE_NETWORK"
 
 # Validate CORE_NETWORK
-if [[ ! "$CORE_NETWORK" =~ ^(oai|free5gc|open5gs)$ ]]; then
-    echo "ERROR: CORE_NETWORK must be one of: oai, free5gc, open5gs (got: $CORE_NETWORK)"
+if [[ ! "$CORE_NETWORK" =~ ^(oai|free5gc|open5gs|external)$ ]]; then
+    echo "ERROR: CORE_NETWORK must be one of: oai, free5gc, open5gs, external (got: $CORE_NETWORK)"
     exit 1
 fi
 
@@ -40,6 +44,33 @@ case $CORE_NETWORK in
         HOST_ROUTE_SUBNET="10.0.0.0/24"
         HOST_ROUTE_GW="192.168.70.134"
         ;;
+    external)
+        EXTERNAL_ENV_FILE="${EXTERNAL_ENV_FILE:-$DEMO_DIR/external.env}"
+        if [ ! -f "$EXTERNAL_ENV_FILE" ]; then
+            echo "ERROR: External env file not found: $EXTERNAL_ENV_FILE"
+            echo "       Copy $DEMO_DIR/external.env and adjust the values for your core network."
+            exit 1
+        fi
+        echo "Loading external core network config from: $EXTERNAL_ENV_FILE"
+        set -a
+        # shellcheck source=/dev/null
+        source "$EXTERNAL_ENV_FILE"
+        set +a
+        # Validate routing variables
+        missing=()
+        [ -z "$UE_ROUTE_SUBNET" ] && missing+=("UE_ROUTE_SUBNET")
+        [ -z "$UE_ROUTE_GW"     ] && missing+=("UE_ROUTE_GW")
+        [ -z "$UE_CARRIER_FREQ" ] && missing+=("UE_CARRIER_FREQ")
+        if [ ${#missing[@]} -gt 0 ]; then
+            echo "ERROR: The following required variables are not set in $EXTERNAL_ENV_FILE:"
+            printf '         %s\n' "${missing[@]}"
+            exit 1
+        fi
+        HOST_ROUTE_SUBNET="$UE_ROUTE_SUBNET"
+        HOST_ROUTE_GW="$UE_ROUTE_GW"
+        echo "WARNING: Using external core network — make sure your UE subscriber is"
+        echo "         already registered in the external core network before continuing."
+        ;;
 esac
 
 # Set common environment variables
@@ -54,24 +85,26 @@ source "$DEMO_DIR/gazebo_launch/install/setup.bash"
 export FASTRTPS_DEFAULT_PROFILES_FILE="$DEMO_DIR/dds.xml"
 export NAME_ROBOT_1=${NAME_ROBOT_1:-"ue_turtlebot"}
 
-# 1. Start the core network
-echo "Starting $CORE_NETWORK core network..."
-cd "$CN_DIR"
-docker compose up -d
-
-# 2. Wait for core network readiness
-if [ "$CORE_NETWORK" = "oai" ]; then
-    ./wait_for_core_network.sh
-else
-    sleep 10
-fi
-
-# 3. Add UE subscriber (open5gs only, after DB is ready)
-if [ "$CORE_NETWORK" = "open5gs" ]; then
-    echo "Adding UE subscriber to Open5GS database..."
-    cd "$CN_DIR/scripts"
-    ./add_ue_subscriber.sh
+# 1. Start the core network (skipped for external)
+if [ "$CORE_NETWORK" != "external" ]; then
+    echo "Starting $CORE_NETWORK core network..."
     cd "$CN_DIR"
+    docker compose up -d
+
+    # 2. Wait for core network readiness
+    if [ "$CORE_NETWORK" = "oai" ]; then
+        ./wait_for_core_network.sh
+    else
+        sleep 10
+    fi
+
+    # 3. Add UE subscriber (open5gs only, after DB is ready)
+    if [ "$CORE_NETWORK" = "open5gs" ]; then
+        echo "Adding UE subscriber to Open5GS database..."
+        cd "$CN_DIR/scripts"
+        ./add_ue_subscriber.sh
+        cd "$CN_DIR"
+    fi
 fi
 
 # 3. Add host route (ignore if it already exists)

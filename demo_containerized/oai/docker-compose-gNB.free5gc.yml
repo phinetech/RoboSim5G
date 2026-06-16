@@ -11,4 +11,4 @@ services:
 networks:
     n3_net:
         external: true
-        name : demo-oai-n3-net
+        name : demo-n3

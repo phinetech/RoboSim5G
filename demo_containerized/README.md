@@ -10,7 +10,7 @@
 
 ## Choosing a Core Network
 
-RoboSim5G supports **three 5G Core Network implementations**: OAI, free5GC, and Open5GS.
+RoboSim5G supports **three 5G Core Network implementations**: OAI, free5GC, and Open5GS. It also supports connecting to an **external** core network that is already running elsewhere.
 
 A single `launch.sh` and `kill.sh` script is provided. You select the core network using the `CORE_NETWORK` environment variable (defaults to `oai`):
 
@@ -18,6 +18,7 @@ A single `launch.sh` and `kill.sh` script is provided. You select the core netwo
 CORE_NETWORK=oai       ./launch.sh   # OpenAirInterface (default)
 CORE_NETWORK=free5gc   ./launch.sh   # free5GC
 CORE_NETWORK=open5gs   ./launch.sh   # Open5GS
+CORE_NETWORK=external  ./launch.sh   # External / pre-existing core network
 ```
 
 The core network containers are launched from the `core_network_setup/` folder at the root of the repository. Each CN has its own subfolder (`core_network_setup/oai/`, `core_network_setup/free5gc/`, `core_network_setup/open5gs/`) containing the docker-compose file and related configuration.
@@ -36,9 +37,37 @@ Install the prerequisite:
 sudo apt install mongodb-mongosh
 ```
 
+### External Core Network
+
+When `CORE_NETWORK=external`, the script **does not start any local core network containers**. Instead it reads the routing parameters from `external.env` (in the `demo_containerized/` directory):
+
+| Variable | Description |
+|---|---|
+| `UE_ROUTE_SUBNET` | Subnet routed through the UPF (added as a host route inside the UE container) |
+| `UE_ROUTE_GW` | IP of the UPF interface used as the PDU session gateway |
+| `UE_CARRIER_FREQ` | Downlink carrier frequency in Hz — must match the external gNB |
+
+Edit `external.env` to match your external core network before launching:
+
+```bash
+# Edit the values in external.env, then:
+CORE_NETWORK=external ./launch.sh
+```
+
+You can also point to a custom env file:
+
+```bash
+EXTERNAL_ENV_FILE=/path/to/my-network.env CORE_NETWORK=external ./launch.sh
+```
+
+> **⚠️ Important:** When using an external core network, you must ensure that:
+> - The UE subscriber (IMSI, keys) is already registered in the external core network.
+> - The `phine-net` Docker network (`192.168.70.0/24`) is reachable from the external AMF and UPF.
+> - The values in `world_only_external.sdf` (located in `images/simulation/gazebo_launch/src/ign_turtlebot/worlds/`) match your external core network. Edit that file directly to adjust gNB/UE plugin parameters (IPs, IMSI, keys, PLMN, etc.), then rebuild the simulation image with `./build_images.sh`.
+
 ### Automatic World Selection
 
-The Gazebo world file is **automatically selected** based on the `CORE_NETWORK` environment variable. The launch file (`gazebo_launch.launch.py`) inside the simulation container reads the `CORE_NETWORK` variable and loads the corresponding world file (`world_only_oai.sdf`, `world_only_free5gc.sdf`, or `world_only_open5gs.sdf`). No manual editing of the launch file or rebuilding of the simulation image is required when switching between core networks.
+The Gazebo world file is **automatically selected** based on the `CORE_NETWORK` environment variable. The launch file (`gazebo_launch.launch.py`) inside the simulation container reads the `CORE_NETWORK` variable and loads the corresponding world file (`world_only_oai.sdf`, `world_only_free5gc.sdf`, `world_only_open5gs.sdf`, or `world_only_external.sdf`). No manual editing of the launch file is required when switching between core networks.
 
 ### RAN Docker Compose Structure
 
@@ -182,15 +211,6 @@ Inside the world file for your chosen CN (same files as above), change the UE pa
 ```
 
 **Note:** The `cn_type` parameter specifies which 5G Core Network the plugin should connect to. Ensure it matches the CN you're using.
-
-## Remove CN from launch file
-
-If you want to manage the CN containers separately, you can comment out the CN launch section in `launch.sh`:
-
-```sh
-# cd "$CN_DIR"
-# docker compose up -d
-```
 
 ## Changing ROS DOMAIN (avoiding multi-user bugs)
 

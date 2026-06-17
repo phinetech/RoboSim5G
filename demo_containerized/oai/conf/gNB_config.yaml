@@ -8,8 +8,8 @@ gNBs:
     gNB_name : gNB1
     tracking_area_code: 1
     plmn_list:
-      - mcc : 001
-        mnc : 01
+      - mcc : 208
+        mnc : 93
         mnc_length: 2
         snssaiList:
           - sst: 1
@@ -138,7 +138,7 @@ gNBs:
 
     NETWORK_INTERFACES:
       GNB_IPV4_ADDRESS_FOR_NG_AMF : 192.168.70.160
-      GNB_IPV4_ADDRESS_FOR_NGU : 192.168.70.160
+      GNB_IPV4_ADDRESS_FOR_NGU : 192.168.71.160
       GNB_PORT_FOR_S1U: 2152 # Spec 2152
 
 

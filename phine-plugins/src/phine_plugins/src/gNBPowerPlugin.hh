@@ -16,18 +16,18 @@ limitations under the License.*/
 #define GNB_POWER_PLUGIN_HH_
 
 #include <QString>
+#include <QTimer>
 #include <ignition/gui/Plugin.hh>
 #include <string>
+#include <vector>
 
 namespace phine_plugins {
 
 class gNBPowerPlugin : public ignition::gui::Plugin {
     Q_OBJECT
 
-    Q_PROPERTY(QString containerName READ getContainerName WRITE
-		   setContainerName NOTIFY containerNameChanged)
-    Q_PROPERTY(
-	bool processRunning READ isProcessRunning NOTIFY processRunningChanged)
+    Q_PROPERTY(QString containerName READ getContainerName WRITE setContainerName NOTIFY containerNameChanged)
+    Q_PROPERTY(bool processRunning READ isProcessRunning NOTIFY processRunningChanged)
     Q_PROPERTY(bool connected READ isConnected NOTIFY connectedChanged)
 
   public:
@@ -42,6 +42,7 @@ class gNBPowerPlugin : public ignition::gui::Plugin {
 
   public slots:
     void toggleProcess();
+    void checkAndUpdateStatus();
 
   signals:
     void containerNameChanged();
@@ -49,13 +50,18 @@ class gNBPowerPlugin : public ignition::gui::Plugin {
     void connectedChanged();
 
   private:
-    bool checkProcessRunning();
+    std::vector<int> getProcessPids() const;
     std::string buildStartCommand() const;
     static bool isValidContainerName(const std::string &name);
 
     QString container_name{"oai-gNB1"};
     bool process_running{false};
     bool connected{false};
+    QTimer *status_timer{nullptr};
+    
+    // Anti-Flicker trackers required by the compiler
+    int skip_checks_count{0};
+    int failed_checks{0};
 };
 
 } // namespace phine_plugins

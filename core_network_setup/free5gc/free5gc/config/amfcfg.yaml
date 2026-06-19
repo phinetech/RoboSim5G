@@ -70,7 +70,7 @@ configuration:
       emcN3: 0 # Emergency service support indicator for Non-3GPP access (uinteger, range: 0~1)
       mcsi: 0 # MCS indicator (uinteger, range: 0~1)
   t3502Value: 720  # timer value (seconds) at UE side
-  t3512Value: 3600 # timer value (seconds) at UE side
+  t3512Value: 10 # timer value (seconds) at UE side
   non3gppDeregTimerValue: 3240 # timer value (seconds) at UE side
   # retransmission timer for paging message
   t3513:

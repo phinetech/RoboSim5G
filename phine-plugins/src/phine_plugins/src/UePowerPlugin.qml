@@ -6,7 +6,7 @@ Rectangle {
     id: uePower
     color: "#2b2b2b"
     Layout.minimumWidth: 400
-    Layout.minimumHeight: 270
+    Layout.minimumHeight: 320
     Layout.fillWidth: true
     anchors.fill: parent
 
@@ -75,6 +75,32 @@ Rectangle {
                 font.pixelSize: 13
                 background: Rectangle {
                     color: gnbIpField.enabled ? "#3c3c3c" : "#2a2a2a"
+                    border.color: "#666666"
+                    radius: 3
+                }
+                color: "#ffffff"
+            }
+        }
+
+        // Carrier Frequency Input
+        RowLayout {
+            spacing: 8
+            Label {
+                text: "Carrier Freq:"
+                color: "#cccccc"
+                font.pixelSize: 13
+                Layout.preferredWidth: 80
+            }
+            TextField {
+                id: carrierFreqField
+                text: UePowerPlugin.carrierFreq
+                placeholderText: "e.g. 3619200000"
+                Layout.fillWidth: true
+                onTextChanged: UePowerPlugin.carrierFreq = text
+                enabled: !UePowerPlugin.connected
+                font.pixelSize: 13
+                background: Rectangle {
+                    color: carrierFreqField.enabled ? "#3c3c3c" : "#2a2a2a"
                     border.color: "#666666"
                     radius: 3
                 }

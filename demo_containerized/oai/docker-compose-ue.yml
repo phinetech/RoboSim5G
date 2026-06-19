@@ -14,6 +14,7 @@ services:
                 ipv4_address: 192.168.73.150
         volumes:
             - ${DEMO_PROJECT_PATH}/oai/conf/UE_config.yaml:/opt/oai-nr-ue/etc/nr-ue.yaml
+            - ${DEMO_PROJECT_PATH}/oai/sensor_reader.py:/app/sensor_reader.py
         entrypoint:
             - /bin/bash
             - -c
@@ -65,6 +66,7 @@ services:
                 export ROS_DISCOVERY_SERVER="192.168.70.159:11811"
                 export FASTRTPS_DEFAULT_PROFILES_FILE=/app/dds.xml
                 ip route add ${UE_ROUTE_SUBNET:-10.0.0.0/24} via ${UE_ROUTE_GW:-192.168.70.134} dev eth0
+                python3 /app/sensor_streamer.py &
                 ./wait_for_nav_stack.sh
                 ros2 launch rviz_launch rviz_launch.launch.py &
                 tail -f /dev/null

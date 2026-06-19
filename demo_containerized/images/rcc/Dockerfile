@@ -39,6 +39,10 @@ RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
 
 COPY wait_for_nav_stack.sh wait_for_nav_stack.sh
 RUN chmod +x /app/wait_for_nav_stack.sh
+# ONLY NEED TO COPY THE PYTHON SCRIPT HERE
+COPY sensor_streamer.py sensor_streamer.py
+RUN chmod +x /app/sensor_streamer.py
+
 # Source the ROS setup file
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc
 RUN echo "export RMW_IMPLEMENTATION=rmw_fastrtps_cpp" >> ~/.bashrc

@@ -17,20 +17,23 @@ limitations under the License.*/
 
 #include <QString>
 #include <QTimer>
+#include <fstream>
 #include <ignition/gui/Plugin.hh>
 #include <string>
 #include <vector>
-#include <fstream>
 
 namespace phine_plugins {
 
 class UePowerPlugin : public ignition::gui::Plugin {
     Q_OBJECT
 
-    Q_PROPERTY(QString containerName READ getContainerName WRITE setContainerName NOTIFY containerNameChanged)
+    Q_PROPERTY(QString containerName READ getContainerName WRITE
+		   setContainerName NOTIFY containerNameChanged)
     Q_PROPERTY(QString gnbIp READ getGnbIp WRITE setGnbIp NOTIFY gnbIpChanged)
-    Q_PROPERTY(QString carrierFreq READ getCarrierFreq WRITE setCarrierFreq NOTIFY carrierFreqChanged)
-    Q_PROPERTY(bool processRunning READ isProcessRunning NOTIFY processRunningChanged)
+    Q_PROPERTY(QString carrierFreq READ getCarrierFreq WRITE setCarrierFreq
+		   NOTIFY carrierFreqChanged)
+    Q_PROPERTY(
+	bool processRunning READ isProcessRunning NOTIFY processRunningChanged)
     Q_PROPERTY(bool connected READ isConnected NOTIFY connectedChanged)
 
   public:
@@ -72,8 +75,8 @@ class UePowerPlugin : public ignition::gui::Plugin {
     bool process_running{false};
     bool connected{false};
     QTimer *status_timer{nullptr};
-    std::vector<int> tracked_pids; 
-    
+    std::vector<int> tracked_pids;
+
     // Anti-Flicker trackers
     int skip_checks_count{0};
     int failed_checks{0};

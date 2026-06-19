@@ -26,8 +26,10 @@ namespace phine_plugins {
 class gNBPowerPlugin : public ignition::gui::Plugin {
     Q_OBJECT
 
-    Q_PROPERTY(QString containerName READ getContainerName WRITE setContainerName NOTIFY containerNameChanged)
-    Q_PROPERTY(bool processRunning READ isProcessRunning NOTIFY processRunningChanged)
+    Q_PROPERTY(QString containerName READ getContainerName WRITE
+		   setContainerName NOTIFY containerNameChanged)
+    Q_PROPERTY(
+	bool processRunning READ isProcessRunning NOTIFY processRunningChanged)
     Q_PROPERTY(bool connected READ isConnected NOTIFY connectedChanged)
 
   public:
@@ -58,7 +60,7 @@ class gNBPowerPlugin : public ignition::gui::Plugin {
     bool process_running{false};
     bool connected{false};
     QTimer *status_timer{nullptr};
-    
+
     // Anti-Flicker trackers required by the compiler
     int skip_checks_count{0};
     int failed_checks{0};

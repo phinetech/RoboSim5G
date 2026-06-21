@@ -3,7 +3,6 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
-import sys
 
 class SensorReceiver(Node):
     def __init__(self):
@@ -25,13 +24,20 @@ class SensorReceiver(Node):
 
         # Einmaliges Löschen des Bildschirms beim Start
         print("\033[2J", end="", flush=True)
-        self.get_logger().info("Empfänger bereit. Warte auf 5G-Grid-Daten...")
+        self.get_logger().info(
+            "Reader is ready. Wait for 5G-Grid-Data..."
+        )
 
     def listener_callback(self, msg):
         # \033[H  -> Bewegt den Cursor ganz nach oben links im Terminal
         # \033[J  -> Löscht alles ab der aktuellen Cursorposition bis unten hin
         # end=""  -> Verhindert, dass print() automatisch eine extra Leerzeile dranhängt
-        output = f"\033[H\033[J--- [  LIVE DEMO FEED ] ---\n{msg.data}\n\n---------------------------"
+        output = (
+            f"\033[H\033[J--- [  LIVE DEMO FEED ] ---\n"
+            f"{msg.data}\n\n"
+            f"---------------------------\n"
+            f"[Ctrl+C] Quit"
+        )
         print(output, end="", flush=True)
 
 def main(args=None):
@@ -40,11 +46,11 @@ def main(args=None):
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        # Cursor beim Beenden sauber eine Zeile nach unten schieben
         print("\n\n")
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
